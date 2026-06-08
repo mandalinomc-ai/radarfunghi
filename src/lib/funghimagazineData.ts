@@ -76,7 +76,7 @@ export const FM_NATIONAL_REPORT: FMNationalReport = {
     "Suoli freddi ancora un fattore limitante sopra i 1000m (Matese, Sila, Abruzzo)",
     "Finferli al top su colli toscani, bassa Umbria e Sabina",
     "Porcini: ripartenza attesa dalla metà della prossima settimana (10-12 giugno)",
-    "Sud Italia: potenziale più basso ma Finferli in ripresa su Campania occidentale/settentrionale e Molise montano",
+    "Sud Italia: potenziale più basso ma Finferli in ripresa su Campania occidentale/settentrionale, Molise montano e Pollino lucano",
   ],
   topRegions: ["Umbria", "Toscana orientale", "Veneto occidentale", "Friuli collinare"],
   risingRegions: ["Lombardia collinare", "Basso Trentino", "Sabina", "Alto Lazio"],
@@ -148,6 +148,54 @@ export const FM_REGIONAL_STATUS: FMRegionalStatus[] = [
     source: FM_SOURCE.articleUrl,
     lastUpdate: "06-06-2026",
   },
+  {
+    region: "Pollino (Basilicata)",
+    trafficLight: "rosa",
+    summary:
+      "Area da monitorare con maggiore attenzione (FM). Possibili nuove nascite a breve su Cozzo del Pellegrino e Piani di Pollino. Finferli su castagneti; Porcini in faggeta alta.",
+    speciesActive: ["Galletto", "Estatino"],
+    speciesImminent: ["Porcino"],
+    soilStatus: "in_riscaldamento",
+    porciniFrom: "10-12 giugno 2026",
+    source: FM_SOURCE.articleUrl,
+    lastUpdate: "06-06-2026",
+  },
+  {
+    region: "Appennino Lucano (Basilicata)",
+    trafficLight: "rosa",
+    summary:
+      "Monticchio e Gallipoli Cognato: buon potenziale Finferli con piogge recenti. Fossi umidi e faggeta lacustre favoriscono nascite rapide.",
+    speciesActive: ["Galletto", "Estatino"],
+    speciesImminent: ["Porcino"],
+    soilStatus: "in_riscaldamento",
+    porciniFrom: "12 giugno 2026",
+    source: FM_SOURCE.articleUrl,
+    lastUpdate: "06-06-2026",
+  },
+  {
+    region: "Monte Vulture (Basilicata)",
+    trafficLight: "giallo",
+    summary:
+      "Lucania occidentale: nascite in fase di cessazione in pianura, ma ancora attive sui boschi del Vulture. Estatini e Finferli su Quercia-Castagno.",
+    speciesActive: ["Estatino", "Galletto"],
+    speciesImminent: ["Porcino"],
+    soilStatus: "in_riscaldamento",
+    porciniFrom: "12-15 giugno 2026",
+    source: FM_SOURCE.articleUrl,
+    lastUpdate: "06-06-2026",
+  },
+  {
+    region: "Lagonegrese (Basilicata)",
+    trafficLight: "giallo",
+    summary:
+      "Faggeta d'altura del Lagonegrese: potenziale Porcino in crescita con escursione termica notturna favorevole sopra i 1100m.",
+    speciesActive: ["Galletto"],
+    speciesImminent: ["Porcino"],
+    soilStatus: "freddo",
+    porciniFrom: "12 giugno 2026",
+    source: FM_SOURCE.articleUrl,
+    lastUpdate: "06-06-2026",
+  },
 ];
 
 export const FM_TRAFFIC_LIGHT_LABELS: Record<FMTrafficLight, string> = {
@@ -174,16 +222,34 @@ export const FM_JUNE_SPECIES = [
   "Agaricus (Prataioli)",
 ];
 
+const ZONE_FM_MAP: Record<string, string> = {
+  matese: "Matese (Campania-Molise)",
+  taburno: "Taburno-Camposauro (Campania)",
+  sannio: "Sannio (BN-CE)",
+  molise: "Molise montano",
+  campania: "Partenio-Irpinia (Campania)",
+  "basilicata-pollino": "Pollino (Basilicata)",
+  "basilicata-vulture": "Monte Vulture (Basilicata)",
+  "basilicata-monticchio": "Appennino Lucano (Basilicata)",
+  "basilicata-gallipoli": "Appennino Lucano (Basilicata)",
+  "basilicata-lagonegrese": "Lagonegrese (Basilicata)",
+  basilicata: "Pollino (Basilicata)",
+};
+
 export function getRegionalStatusForZone(
-  region: string
+  region: string,
+  zoneId?: string
 ): FMRegionalStatus | undefined {
-  const map: Record<string, string> = {
-    matese: "Matese (Campania-Molise)",
-    taburno: "Taburno-Camposauro (Campania)",
-    sannio: "Sannio (BN-CE)",
-    molise: "Molise montano",
-    campania: "Partenio-Irpinia (Campania)",
-  };
-  const key = map[region];
+  let key = ZONE_FM_MAP[region];
+
+  if (region === "basilicata" && zoneId) {
+    if (zoneId.includes("pollino")) key = ZONE_FM_MAP["basilicata-pollino"];
+    else if (zoneId.includes("vulture")) key = ZONE_FM_MAP["basilicata-vulture"];
+    else if (zoneId.includes("monticchio") || zoneId.includes("gallipoli"))
+      key = ZONE_FM_MAP["basilicata-monticchio"];
+    else if (zoneId.includes("lagonegrese"))
+      key = ZONE_FM_MAP["basilicata-lagonegrese"];
+  }
+
   return FM_REGIONAL_STATUS.find((r) => r.region === key);
 }

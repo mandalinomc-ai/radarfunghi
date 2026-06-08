@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MushroomRadar — Predizione Fungina Sannio, Molise, Campania",
+  title: "MushroomRadar — Predizione Fungina Sud Italia",
   description:
-    "Mappa satellitare interattiva con predizione oraria della probabilità di nascita di Porcini, Estatini e Galletti nel Matese, Taburno e aree limitrofe.",
+    "Mappa satellitare interattiva con predizione oraria della probabilità di nascita di Porcini, Estatini e Galletti nel Sannio, Molise, Campania e Basilicata.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

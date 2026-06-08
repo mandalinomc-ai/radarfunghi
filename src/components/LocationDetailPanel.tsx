@@ -18,6 +18,7 @@ import {
   FM_SOURCE,
 } from "@/lib/funghimagazineData";
 import { estimateYields } from "@/lib/beginnerGuide";
+import { getRegionLabel } from "@/lib/regionLabels";
 
 interface LocationDetailPanelProps {
   hotspot: MapHotspot | null;
@@ -35,7 +36,7 @@ export default function LocationDetailPanel({
   if (!hotspot) return null;
 
   const { zone, predictions, activeScore, activeSpecies } = hotspot;
-  const fmStatus = getRegionalStatusForZone(zone.region);
+  const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
   const yields = estimateYields(hotspot, dayOffset);
   const mapsLink = getGoogleMapsDeepLink(
     zone.lat,
@@ -107,7 +108,7 @@ function PanelHeader({
         <h2 className="text-base md:text-lg font-bold text-forest-200 truncate">
           {zone.name}
         </h2>
-        <p className="text-xs text-forest-400 capitalize">{zone.region}</p>
+        <p className="text-xs text-forest-400">{getRegionLabel(zone.region)}</p>
       </div>
       <button
         onClick={onClose}

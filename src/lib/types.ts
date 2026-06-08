@@ -25,7 +25,13 @@ export interface CollectionWindow {
 export interface FungalZone {
   id: string;
   name: string;
-  region: "matese" | "taburno" | "sannio" | "molise" | "campania";
+  region:
+    | "matese"
+    | "taburno"
+    | "sannio"
+    | "molise"
+    | "campania"
+    | "basilicata";
   lat: number;
   lng: number;
   altitude: number;

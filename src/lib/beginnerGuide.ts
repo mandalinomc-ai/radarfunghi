@@ -85,7 +85,7 @@ export function estimateYields(
   dayOffset: number
 ): YieldEstimate[] {
   const { zone, predictions, activeScore } = hotspot;
-  const fmStatus = getRegionalStatusForZone(zone.region);
+  const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
   const soilCold = fmStatus?.soilStatus === "freddo";
   const beforePorciniDate = dayOffset < 2;
 
@@ -159,7 +159,7 @@ function buildSimpleVerdict(
   hotspot: MapHotspot,
   dayOffset: number
 ): string {
-  const fm = getRegionalStatusForZone(hotspot.zone.region);
+  const fm = getRegionalStatusForZone(hotspot.zone.region, hotspot.zone.id);
   const day = DAY_LABELS[dayOffset] ?? `Tra ${dayOffset} giorni`;
 
   if (hotspot.activeScore >= 75) {
@@ -187,7 +187,7 @@ export function generateBeginnerRoadmap(
 
   const best = viable[0];
   const { zone } = best;
-  const fmStatus = getRegionalStatusForZone(zone.region);
+  const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
   const driveMin = estimateDriveMinutes(zone.altitude);
   const walkMin = estimateWalkMinutes(zone.altitude);
 

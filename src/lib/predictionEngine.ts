@@ -197,7 +197,7 @@ export function calculateSproutScore(
       timeScore * weights.time
   );
 
-  const fmStatus = getRegionalStatusForZone(zone.region);
+  const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
   if (fmStatus) {
     if (species === "porcino" && fmStatus.soilStatus === "freddo") {
       score = clamp(score * 0.55);
