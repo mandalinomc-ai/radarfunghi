@@ -14,6 +14,7 @@ interface BeginnerGuidePanelProps {
   onClose: () => void;
   onGenerate: () => void;
   isLoading: boolean;
+  hasDetailOpen?: boolean;
 }
 
 export default function BeginnerGuidePanel({
@@ -22,25 +23,26 @@ export default function BeginnerGuidePanel({
   onClose,
   onGenerate,
   isLoading,
+  hasDetailOpen,
 }: BeginnerGuidePanelProps) {
-  if (!isOpen && !isLoading) {
+  if (!isOpen && !isLoading && !hasDetailOpen) {
     return (
       <button
         onClick={onGenerate}
         disabled={isLoading}
-        className="absolute bottom-[140px] left-1/2 -translate-x-1/2 z-[1001] pointer-events-auto
-          px-8 py-4 rounded-2xl
+        className="absolute bottom-[200px] md:bottom-[140px] left-3 right-3 md:left-1/2 md:right-auto md:-translate-x-1/2 z-[1001] pointer-events-auto
+          px-4 py-3.5 md:px-8 md:py-4 rounded-2xl
           bg-gradient-to-r from-mushroom-500 via-mushroom-400 to-mushroom-500
           hover:from-mushroom-400 hover:via-mushroom-300 hover:to-mushroom-400
-          text-white font-bold text-base tracking-wide
+          text-white font-bold text-sm md:text-base tracking-wide text-center
           shadow-[0_0_30px_rgba(228,120,48,0.4)]
           border-2 border-mushroom-300/50
-          transition-all transform hover:scale-105 active:scale-95
+          transition-all transform active:scale-95
           disabled:opacity-60 disabled:cursor-wait
-          animate-pulse hover:animate-none"
+          animate-pulse md:hover:animate-none touch-manipulation"
       >
         {isLoading ? (
-          "⏳ Sto preparando la tua guida..."
+          "⏳ Preparo la guida..."
         ) : (
           "🍄 NON SO NIENTE — DIMMI TUTTO!"
         )}
@@ -84,9 +86,9 @@ export default function BeginnerGuidePanel({
   }
 
   return (
-    <div className="absolute inset-0 z-[1002] pointer-events-auto flex items-end sm:items-center justify-center bg-forest-950/70 backdrop-blur-sm p-4">
-      <div className="bg-forest-900 border border-mushroom-500/30 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-forest-900/95 backdrop-blur-lg border-b border-forest-700/40 px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 z-[1004] pointer-events-auto flex items-end md:items-center justify-center bg-forest-950/70 backdrop-blur-sm p-0 md:p-4 safe-top">
+      <div className="bg-forest-900 border border-mushroom-500/30 rounded-t-2xl md:rounded-2xl w-full max-w-2xl max-h-[92dvh] md:max-h-[85vh] overflow-y-auto shadow-2xl safe-bottom">
+        <div className="sticky top-0 bg-forest-900/95 backdrop-blur-lg border-b border-forest-700/40 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-mushroom-400">
               Guida per principianti
@@ -103,7 +105,7 @@ export default function BeginnerGuidePanel({
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-4 md:p-6 space-y-4 md:space-y-5 pb-6">
           <div className="bg-gradient-to-r from-mushroom-500/20 to-forest-600/20 rounded-xl p-4 border border-mushroom-500/20">
             <p className="text-lg font-semibold text-forest-100 leading-relaxed">
               {roadmap.simpleVerdict}
@@ -124,7 +126,7 @@ export default function BeginnerGuidePanel({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
             <InfoCard label="Dove andare" value={roadmap.recommendedZone} />
             <InfoCard
               label="Quanto puoi trovare"

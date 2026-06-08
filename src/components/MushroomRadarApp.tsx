@@ -12,18 +12,25 @@ import TimelineSlider from "./TimelineSlider";
 import LocationDetailPanel from "./LocationDetailPanel";
 import FunghiMagazineBanner from "./FunghiMagazineBanner";
 import BeginnerGuidePanel from "./BeginnerGuidePanel";
+import MobileBottomBar from "./MobileBottomBar";
+import MobileSheet from "./MobileSheet";
+import SpeciesFilterContent from "./SpeciesFilterContent";
+import FunghiMagazineContent from "./FunghiMagazineContent";
+import LegendContent from "./LegendContent";
 
 const MushroomMap = dynamic(() => import("./MushroomMap"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-forest-950">
-      <div className="text-center">
-        <div className="w-12 h-12 border-3 border-mushroom-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-forest-400 text-sm">Caricamento mappa satellitare...</p>
+      <div className="text-center px-4">
+        <div className="w-10 h-10 border-2 border-mushroom-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-forest-400 text-sm">Caricamento mappa...</p>
       </div>
     </div>
   ),
 });
+
+type MobilePanel = "filter" | "fm" | "legend" | null;
 
 export default function MushroomRadarApp() {
   const [activeSpecies, setActiveSpecies] = useState<MushroomSpecies | "all">(
@@ -37,6 +44,7 @@ export default function MushroomRadarApp() {
   const [beginnerOpen, setBeginnerOpen] = useState(false);
   const [beginnerRoadmap, setBeginnerRoadmap] = useState<BeginnerRoadmap | null>(null);
   const [guideLoading, setGuideLoading] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>(null);
 
   const hotspots = useMemo(
     () => buildHotspots(FUNGAL_ZONES, activeSpecies, hour, dayOffset),
@@ -57,12 +65,14 @@ export default function MushroomRadarApp() {
   const handleHotspotClick = useCallback((hotspot: MapHotspot) => {
     setSelectedHotspot(hotspot);
     setBeginnerOpen(false);
+    setMobilePanel(null);
   }, []);
 
   const handleBeginnerGuide = useCallback(() => {
     setGuideLoading(true);
     setBeginnerOpen(true);
     setSelectedHotspot(null);
+    setMobilePanel(null);
     setTimeout(() => {
       const roadmap = generateBeginnerRoadmap(hotspots, dayOffset, hour);
       setBeginnerRoadmap(roadmap);
@@ -76,9 +86,20 @@ export default function MushroomRadarApp() {
     }, 600);
   }, [hotspots, dayOffset, hour]);
 
+  const handleSpeciesChange = useCallback((species: MushroomSpecies | "all") => {
+    setActiveSpecies(species);
+    setMobilePanel(null);
+  }, []);
+
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-forest-950">
-      <div className="absolute inset-0 bottom-[120px]">
+    <div className="relative w-full h-dvh overflow-hidden bg-forest-950 touch-manipulation">
+      <div
+        className={`absolute inset-0 ${
+          selectedHotspot
+            ? "bottom-[132px] md:bottom-[120px]"
+            : "bottom-[132px] md:bottom-[120px]"
+        }`}
+      >
         <MushroomMap
           hotspots={hotspots}
           selectedZoneId={selectedHotspot?.zone.id ?? null}
@@ -94,10 +115,43 @@ export default function MushroomRadarApp() {
 
       <SpeciesFilter
         activeSpecies={activeSpecies}
-        onSpeciesChange={setActiveSpecies}
+        onSpeciesChange={handleSpeciesChange}
       />
 
       <FunghiMagazineBanner />
+
+      <MobileBottomBar
+        onOpenFilters={() => setMobilePanel("filter")}
+        onOpenFM={() => setMobilePanel("fm")}
+        onOpenLegend={() => setMobilePanel("legend")}
+      />
+
+      <MobileSheet
+        open={mobilePanel === "filter"}
+        onClose={() => setMobilePanel(null)}
+        title="Filtra specie"
+      >
+        <SpeciesFilterContent
+          activeSpecies={activeSpecies}
+          onSpeciesChange={handleSpeciesChange}
+        />
+      </MobileSheet>
+
+      <MobileSheet
+        open={mobilePanel === "fm"}
+        onClose={() => setMobilePanel(null)}
+        title="Funghimagazine Live"
+      >
+        <FunghiMagazineContent />
+      </MobileSheet>
+
+      <MobileSheet
+        open={mobilePanel === "legend"}
+        onClose={() => setMobilePanel(null)}
+        title="Legenda mappa"
+      >
+        <LegendContent />
+      </MobileSheet>
 
       <BeginnerGuidePanel
         roadmap={beginnerRoadmap}
@@ -108,29 +162,12 @@ export default function MushroomRadarApp() {
         }}
         onGenerate={handleBeginnerGuide}
         isLoading={guideLoading}
+        hasDetailOpen={!!selectedHotspot}
       />
 
-      <div className="absolute bottom-[120px] right-4 z-[1000] pointer-events-auto">
+      <div className="hidden md:block absolute bottom-[120px] right-4 z-[1000] pointer-events-auto">
         <div className="bg-forest-900/90 backdrop-blur-md border border-forest-600/40 rounded-xl p-3 shadow-2xl">
-          <p className="text-[10px] uppercase tracking-wider text-forest-400 mb-2">
-            Legenda probabilità
-          </p>
-          <div className="space-y-1.5">
-            {[
-              { label: "Alta (>80%)", color: "rgba(228, 90, 30, 0.8)" },
-              { label: "Media (60-80%)", color: "rgba(245, 154, 74, 0.7)" },
-              { label: "Moderata (40-60%)", color: "rgba(122, 184, 114, 0.6)" },
-              { label: "Bassa (<40%)", color: "rgba(61, 107, 56, 0.4)" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
-                <span
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-xs text-forest-300">{item.label}</span>
-              </div>
-            ))}
-          </div>
+          <LegendContent />
         </div>
       </div>
 

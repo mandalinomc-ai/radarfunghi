@@ -45,96 +45,149 @@ export default function LocationDetailPanel({
   );
 
   return (
-    <div className="absolute top-0 right-0 bottom-0 z-[1001] w-full max-w-md pointer-events-auto">
-      <div className="h-full bg-forest-900/95 backdrop-blur-lg border-l border-forest-600/40 shadow-2xl overflow-y-auto">
-        <div className="sticky top-0 bg-forest-900/95 backdrop-blur-lg border-b border-forest-600/30 px-5 py-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-forest-200">{zone.name}</h2>
-            <p className="text-xs text-forest-400 capitalize">{zone.region}</p>
+    <>
+      {/* Mobile: bottom sheet */}
+      <div className="md:hidden fixed inset-x-0 bottom-[132px] z-[1002] pointer-events-auto safe-bottom">
+        <div className="mx-2 max-h-[58dvh] bg-forest-900/98 backdrop-blur-lg border border-forest-600/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+          <PanelHeader zone={zone} onClose={onClose} compact />
+          <div className="overflow-y-auto overscroll-contain p-4 space-y-4">
+            <PanelBody
+              activeScore={activeScore}
+              activeSpecies={activeSpecies}
+              zone={zone}
+              fmStatus={fmStatus}
+              yields={yields}
+              predictions={predictions}
+              currentHour={currentHour}
+              mapsLink={mapsLink}
+              compact
+            />
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-forest-800 hover:bg-forest-700 text-forest-300 flex items-center justify-center transition-colors"
-          >
-            ✕
-          </button>
         </div>
+      </div>
 
-        <div className="p-5 space-y-5">
-          <div className="flex items-center gap-4">
-            <div
-              className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+      {/* Desktop: side panel */}
+      <div className="hidden md:block absolute top-0 right-0 bottom-0 z-[1001] w-full max-w-md pointer-events-auto">
+        <div className="h-full bg-forest-900/95 backdrop-blur-lg border-l border-forest-600/40 shadow-2xl overflow-y-auto">
+          <PanelHeader zone={zone} onClose={onClose} />
+          <div className="p-5 space-y-5">
+            <PanelBody
+              activeScore={activeScore}
+              activeSpecies={activeSpecies}
+              zone={zone}
+              fmStatus={fmStatus}
+              yields={yields}
+              predictions={predictions}
+              currentHour={currentHour}
+              mapsLink={mapsLink}
+            />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PanelHeader({
+  zone,
+  onClose,
+  compact,
+}: {
+  zone: MapHotspot["zone"];
+  onClose: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`sticky top-0 bg-forest-900/95 backdrop-blur-lg border-b border-forest-600/30 flex items-center justify-between shrink-0 ${
+        compact ? "px-4 py-3" : "px-5 py-4"
+      }`}
+    >
+      <div className="min-w-0 pr-2">
+        <h2 className="text-base md:text-lg font-bold text-forest-200 truncate">
+          {zone.name}
+        </h2>
+        <p className="text-xs text-forest-400 capitalize">{zone.region}</p>
+      </div>
+      <button
+        onClick={onClose}
+        className="w-10 h-10 shrink-0 rounded-xl bg-forest-800 hover:bg-forest-700 text-forest-300 flex items-center justify-center transition-colors touch-manipulation"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+function PanelBody({
+  activeScore,
+  activeSpecies,
+  zone,
+  fmStatus,
+  yields,
+  predictions,
+  currentHour,
+  mapsLink,
+  compact,
+}: {
+  activeScore: number;
+  activeSpecies: MapHotspot["activeSpecies"];
+  zone: MapHotspot["zone"];
+  fmStatus: ReturnType<typeof getRegionalStatusForZone>;
+  yields: ReturnType<typeof estimateYields>;
+  predictions: MapHotspot["predictions"];
+  currentHour: number;
+  mapsLink: string;
+  compact?: boolean;
+}) {
+  return (
+    <>
+      <div className="flex items-center gap-3 md:gap-4">
+        <div
+          className="w-14 h-14 md:w-16 md:h-16 rounded-xl flex items-center justify-center text-xl md:text-2xl font-bold text-white shadow-lg shrink-0"
+          style={{
+            background: `linear-gradient(135deg, ${SPECIES_COLORS[activeSpecies]}, #2d4f2a)`,
+          }}
+        >
+          {activeScore}%
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs md:text-sm text-forest-400">Sprout Score</p>
+          <p className="text-base md:text-lg font-semibold text-mushroom-400 truncate">
+            {getSpeciesLabel(activeSpecies)}
+          </p>
+          <p className="text-[10px] md:text-xs text-forest-500 italic truncate">
+            {getSpeciesScientific(activeSpecies)}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 md:gap-3">
+        <InfoBox label="Coordinate GPS" value={formatCoordinates(zone.lat, zone.lng)} mono />
+        <InfoBox label="Quota" value={`${zone.altitude} m`} />
+      </div>
+
+      <InfoBox label="Macchia boschiva" value={zone.forestType} sub={`Esposizione: ${zone.exposure.toUpperCase()}`} />
+
+      {fmStatus && (
+        <div className="bg-forest-950/60 rounded-xl p-3 border border-mushroom-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{
-                background: `linear-gradient(135deg, ${SPECIES_COLORS[activeSpecies]}, #2d4f2a)`,
+                backgroundColor: FM_TRAFFIC_LIGHT_COLORS[fmStatus.trafficLight],
               }}
-            >
-              {activeScore}%
-            </div>
-            <div>
-              <p className="text-sm text-forest-400">Sprout Score</p>
-              <p className="text-lg font-semibold text-mushroom-400">
-                {getSpeciesLabel(activeSpecies)}
-              </p>
-              <p className="text-xs text-forest-500 italic">
-                {getSpeciesScientific(activeSpecies)}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-forest-950/60 rounded-lg p-3 border border-forest-700/30">
-              <p className="text-[10px] uppercase tracking-wider text-forest-500">
-                Coordinate GPS
-              </p>
-              <p className="text-sm font-mono text-forest-200 mt-1">
-                {formatCoordinates(zone.lat, zone.lng)}
-              </p>
-            </div>
-            <div className="bg-forest-950/60 rounded-lg p-3 border border-forest-700/30">
-              <p className="text-[10px] uppercase tracking-wider text-forest-500">
-                Quota
-              </p>
-              <p className="text-sm font-semibold text-forest-200 mt-1">
-                {zone.altitude} m s.l.m.
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-forest-950/60 rounded-lg p-3 border border-forest-700/30">
-            <p className="text-[10px] uppercase tracking-wider text-forest-500">
-              Macchia boschiva
-            </p>
-            <p className="text-sm text-forest-200 mt-1">{zone.forestType}</p>
-            <p className="text-xs text-forest-500 mt-1">
-              Esposizione: {zone.exposure.toUpperCase()}
+            />
+            <p className="text-[10px] uppercase tracking-wider text-mushroom-400">
+              FM — {FM_TRAFFIC_LIGHT_LABELS[fmStatus.trafficLight]}
             </p>
           </div>
+          <p className="text-xs text-forest-300 leading-relaxed">{fmStatus.summary}</p>
+        </div>
+      )}
 
-          {fmStatus && (
-            <div className="bg-forest-950/60 rounded-lg p-3 border border-mushroom-500/20">
-              <div className="flex items-center gap-2 mb-2">
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{
-                    backgroundColor:
-                      FM_TRAFFIC_LIGHT_COLORS[fmStatus.trafficLight],
-                  }}
-                />
-                <p className="text-[10px] uppercase tracking-wider text-mushroom-400">
-                  Funghimagazine — {FM_TRAFFIC_LIGHT_LABELS[fmStatus.trafficLight]}
-                </p>
-              </div>
-              <p className="text-xs text-forest-300 leading-relaxed">
-                {fmStatus.summary}
-              </p>
-              {fmStatus.porciniFrom && (
-                <p className="text-[10px] text-forest-500 mt-1.5">
-                  Porcini attesi dal: {fmStatus.porciniFrom}
-                </p>
-              )}
-            </div>
-          )}
-
+      {!compact && (
+        <>
           <div>
             <p className="text-[10px] uppercase tracking-wider text-forest-400 mb-2">
               Quantità stimata
@@ -158,7 +211,7 @@ export default function LocationDetailPanel({
 
           <div>
             <p className="text-[10px] uppercase tracking-wider text-forest-400 mb-2">
-              Dettaglio fattori predittivi
+              Fattori predittivi
             </p>
             <div className="space-y-2">
               {predictions.map((pred) => (
@@ -177,46 +230,63 @@ export default function LocationDetailPanel({
                       {pred.score}%
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-1 text-[10px]">
-                    {Object.entries(pred.factors).map(([key, val]) => (
-                      <div key={key} className="text-center">
-                        <p className="text-forest-500 capitalize">
-                          {key.replace("Score", "")}
-                        </p>
-                        <p className="text-forest-300 font-medium">{val}</p>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               ))}
             </div>
           </div>
+        </>
+      )}
 
-          <a
-            href={mapsLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full py-4 rounded-xl bg-gradient-to-r from-mushroom-500 to-mushroom-600 hover:from-mushroom-400 hover:to-mushroom-500 text-white text-center font-bold text-sm tracking-wide shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            APRI IN GOOGLE MAPS
-          </a>
-          <p className="text-[10px] text-forest-500 text-center">
-            Navigazione verso parcheggio:{" "}
-            {formatCoordinates(zone.parkingLat, zone.parkingLng)}
-          </p>
-          <p className="text-[10px] text-forest-600 text-center">
-            Fonte:{" "}
-            <a
-              href={FM_SOURCE.articleUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-mushroom-500/70 underline"
-            >
-              {FM_SOURCE.name}
-            </a>
-          </p>
-        </div>
-      </div>
+      <a
+        href={mapsLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block w-full py-4 rounded-xl bg-gradient-to-r from-mushroom-500 to-mushroom-600 active:from-mushroom-400 active:to-mushroom-500 text-white text-center font-bold text-sm tracking-wide shadow-lg transition-all touch-manipulation"
+      >
+        🧭 APRI IN GOOGLE MAPS
+      </a>
+      <p className="text-[10px] text-forest-500 text-center">
+        Parcheggio: {formatCoordinates(zone.parkingLat, zone.parkingLng)}
+      </p>
+      <p className="text-[10px] text-forest-600 text-center pb-1">
+        Fonte:{" "}
+        <a
+          href={FM_SOURCE.articleUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-mushroom-500/70 underline"
+        >
+          {FM_SOURCE.name}
+        </a>
+      </p>
+    </>
+  );
+}
+
+function InfoBox({
+  label,
+  value,
+  sub,
+  mono,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="bg-forest-950/60 rounded-lg p-2.5 md:p-3 border border-forest-700/30">
+      <p className="text-[9px] md:text-[10px] uppercase tracking-wider text-forest-500">
+        {label}
+      </p>
+      <p
+        className={`text-xs md:text-sm text-forest-200 mt-0.5 ${
+          mono ? "font-mono" : "font-semibold"
+        }`}
+      >
+        {value}
+      </p>
+      {sub && <p className="text-[10px] text-forest-500 mt-0.5">{sub}</p>}
     </div>
   );
 }

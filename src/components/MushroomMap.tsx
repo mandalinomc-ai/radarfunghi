@@ -89,7 +89,7 @@ function HotspotMarkers({
           <CircleMarker
             key={hotspot.zone.id}
             center={[hotspot.zone.lat, hotspot.zone.lng]}
-            radius={isSelected ? 12 : 8}
+            radius={isSelected ? 14 : 11}
             pathOptions={{
               fillColor: color,
               fillOpacity: isSelected ? 1 : 0.85,

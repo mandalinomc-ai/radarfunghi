@@ -7,6 +7,8 @@
 :root {
   --background: #0a1209;
   --foreground: #7ab872;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 html,
@@ -17,6 +19,22 @@ body {
   background: var(--background);
   color: var(--foreground);
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+.safe-top {
+  padding-top: var(--safe-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+.h-dvh {
+  height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
 }
 
 .leaflet-container {
@@ -24,11 +42,35 @@ body {
   height: 100%;
   background: #0a1209;
   font-family: inherit;
+  touch-action: none;
 }
 
 .leaflet-control-zoom {
   border: none !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  margin-bottom: calc(8px + var(--safe-bottom)) !important;
+}
+
+@media (max-width: 767px) {
+  .leaflet-control-zoom {
+    margin-left: 8px !important;
+    margin-bottom: calc(4px + var(--safe-bottom)) !important;
+  }
+
+  .leaflet-control-zoom a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 18px !important;
+  }
+
+  .leaflet-control-attribution {
+    font-size: 7px !important;
+    max-width: 50vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .leaflet-control-zoom a {
@@ -54,8 +96,17 @@ body {
   color: #7ab872 !important;
 }
 
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -67,6 +118,6 @@ body {
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #5a8f54;
+.touch-manipulation {
+  touch-action: manipulation;
 }
