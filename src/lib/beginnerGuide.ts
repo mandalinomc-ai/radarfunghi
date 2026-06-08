@@ -6,6 +6,7 @@ import {
   getRegionalStatusForZone,
   type FMTrafficLight,
 } from "./funghimagazineData";
+import { formatDriveFromBenevento } from "./benevento";
 import {
   formatCoordinates,
   getGoogleMapsDeepLink,
@@ -67,12 +68,6 @@ function formatTime(hour: number, minute = 0): string {
   return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 }
 
-function estimateDriveMinutes(altitude: number): number {
-  if (altitude < 800) return 45;
-  if (altitude < 1000) return 60;
-  if (altitude < 1200) return 75;
-  return 90;
-}
 
 function estimateWalkMinutes(altitude: number): number {
   if (altitude < 800) return 15;
@@ -188,7 +183,7 @@ export function generateBeginnerRoadmap(
   const best = viable[0];
   const { zone } = best;
   const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
-  const driveMin = estimateDriveMinutes(zone.altitude);
+  const driveMin = zone.driveMinutesFromBenevento;
   const walkMin = estimateWalkMinutes(zone.altitude);
 
   const collectionStart = zone.collectionWindow.startHour;
@@ -215,7 +210,7 @@ export function generateBeginnerRoadmap(
       step: 1,
       time: formatTime(depHour, depMin),
       title: "Parti da casa",
-      description: `Metti in auto sacco di carta o cesto traspirante, coltello, acqua e giacca. Imposta il navigatore verso il parcheggio: ${formatCoordinates(zone.parkingLat, zone.parkingLng)}. Tempo di viaggio stimato: ~${driveMin} minuti.`,
+      description: `Metti in auto sacco di carta o cesto traspirante, coltello, acqua e giacca. Parti da Benevento e imposta il navigatore verso il parcheggio: ${formatCoordinates(zone.parkingLat, zone.parkingLng)}. Tempo di viaggio: ${formatDriveFromBenevento(driveMin)}.`,
       icon: "🚗",
     },
     {

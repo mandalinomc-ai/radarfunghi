@@ -16,6 +16,7 @@ import {
   scoreToRadius,
   SPECIES_COLORS,
 } from "@/lib/mapUtils";
+import { BENEVENTO } from "@/lib/benevento";
 import { MAP_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/mockData";
 
 interface MushroomMapProps {
@@ -136,6 +137,16 @@ export default function MushroomMap({
         opacity={0.7}
       />
 
+      <CircleMarker
+        center={[BENEVENTO.lat, BENEVENTO.lng]}
+        radius={7}
+        pathOptions={{
+          fillColor: "#3b82f6",
+          fillOpacity: 1,
+          color: "#ffffff",
+          weight: 2,
+        }}
+      />
       <HeatmapOverlay hotspots={hotspots} />
       <HotspotMarkers
         hotspots={hotspots}

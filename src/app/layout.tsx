@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MushroomRadar — Predizione Fungina Sud Italia",
+  title: "MushroomRadar — Zone fungine entro 3h da Benevento",
   description:
-    "Mappa satellitare interattiva con predizione oraria della probabilità di nascita di Porcini, Estatini e Galletti nel Sannio, Molise, Campania e Basilicata.",
+    "Mappa satellitare con predizione oraria di Porcini, Estatini e Galletti in tutte le zone raggiungibili entro 3 ore da Benevento città.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

@@ -19,6 +19,7 @@ import {
 } from "@/lib/funghimagazineData";
 import { estimateYields } from "@/lib/beginnerGuide";
 import { getRegionLabel } from "@/lib/regionLabels";
+import { formatDriveFromBenevento } from "@/lib/benevento";
 
 interface LocationDetailPanelProps {
   hotspot: MapHotspot | null;
@@ -166,6 +167,12 @@ function PanelBody({
       <div className="grid grid-cols-2 gap-2 md:gap-3">
         <InfoBox label="Coordinate GPS" value={formatCoordinates(zone.lat, zone.lng)} mono />
         <InfoBox label="Quota" value={`${zone.altitude} m`} />
+        <InfoBox
+          label="Da Benevento"
+          value={formatDriveFromBenevento(zone.driveMinutesFromBenevento)}
+          highlight
+        />
+        <InfoBox label="Regione" value={getRegionLabel(zone.region)} />
       </div>
 
       <InfoBox label="Macchia boschiva" value={zone.forestType} sub={`Esposizione: ${zone.exposure.toUpperCase()}`} />
@@ -269,11 +276,13 @@ function InfoBox({
   value,
   sub,
   mono,
+  highlight,
 }: {
   label: string;
   value: string;
   sub?: string;
   mono?: boolean;
+  highlight?: boolean;
 }) {
   return (
     <div className="bg-forest-950/60 rounded-lg p-2.5 md:p-3 border border-forest-700/30">
@@ -281,8 +290,12 @@ function InfoBox({
         {label}
       </p>
       <p
-        className={`text-xs md:text-sm text-forest-200 mt-0.5 ${
-          mono ? "font-mono" : "font-semibold"
+        className={`text-xs md:text-sm mt-0.5 ${
+          highlight
+            ? "font-semibold text-mushroom-400"
+            : mono
+              ? "font-mono text-forest-200"
+              : "font-semibold text-forest-200"
         }`}
       >
         {value}

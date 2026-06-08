@@ -27,7 +27,7 @@ export default function Header({
                 Mushroom<span className="text-mushroom-400">Radar</span>
               </h1>
               <p className="text-[10px] md:text-xs text-forest-400/80 truncate">
-                Sannio · Molise · Campania · Basilicata
+                Entro 3h da Benevento
               </p>
               <p className="hidden md:block text-[9px] text-mushroom-500/70 mt-0.5">
                 Dati live da Funghimagazine.it

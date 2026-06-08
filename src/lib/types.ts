@@ -43,6 +43,8 @@ export interface FungalZone {
   nightThermalShock: number;
   parkingLat: number;
   parkingLng: number;
+  /** Minuti di viaggio stimati da Benevento città */
+  driveMinutesFromBenevento: number;
   hourlyForecasts: HourlyForecast[];
   collectionWindow: CollectionWindow;
 }
