@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type, type GenerateContentResponse } from "@google/genai";
 import type { MapHotspot, MushroomSpecies } from "./types";
 import { getSpeciesLabel } from "./predictionEngine";
-import { getProbabilityLevel } from "./mapUtils";
+import { getProbabilityLevel, type ProbabilityLevel } from "./mapUtils";
 import { formatDateLabel, todayISO } from "./dateUtils";
 import {
   CAMPANIA_SOCIAL_FORAGING_TRENDS,
@@ -38,7 +38,7 @@ export interface GeminiHotspotSnapshot {
   activeScore: number;
   activeSpecies: MushroomSpecies;
   activeSpeciesLabel: string;
-  probabilityLevel: "alta" | "media" | "bassa";
+  probabilityLevel: ProbabilityLevel;
   kmFromOrigin: number;
   driveMinutesFromOrigin: number;
   parkingLat: number;
@@ -50,7 +50,7 @@ export interface GeminiHotspotSnapshot {
     species: MushroomSpecies;
     label: string;
     score: number;
-    level: "alta" | "media" | "bassa";
+    level: ProbabilityLevel;
   }>;
 }
 

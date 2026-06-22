@@ -3,7 +3,13 @@
 import { useState } from "react";
 import type { GeoPoint } from "@/lib/geoUtils";
 import type { CityDualPreview } from "@/lib/cityDayPreview";
-import type { ProbabilityLevel } from "@/lib/mapUtils";
+import {
+  getProbabilityLevel,
+  PROBABILITY_LEVEL_CLASSES,
+  PROBABILITY_LEVEL_LABELS,
+  PROBABILITY_LEVEL_TEXT,
+  type ProbabilityLevel,
+} from "@/lib/mapUtils";
 import OriginPicker from "./OriginPicker";
 
 interface CitySearchBarProps {
@@ -16,15 +22,6 @@ interface CitySearchBarProps {
   onFocusDay?: (offset: 0 | 1) => void;
   onOpenPreviewSheet?: () => void;
 }
-
-const LEVEL_STYLE: Record<
-  ProbabilityLevel,
-  { bg: string; text: string; label: string }
-> = {
-  alta: { bg: "bg-green-900/55", text: "text-green-200", label: "Alta" },
-  media: { bg: "bg-orange-600/25", text: "text-orange-300", label: "Media" },
-  bassa: { bg: "bg-red-700/40", text: "text-red-300", label: "Bassa" },
-};
 
 export default function CitySearchBar({
   origin,
@@ -225,7 +222,7 @@ function DayCard({
             <span className="text-lg font-bold text-forest-100">
               {best.activeScore}%
             </span>
-            <LevelBadge level={getLevelFromScore(best.activeScore)} />
+            <LevelBadge level={getProbabilityLevel(best.activeScore)} />
           </div>
           <p className="text-[11px] text-forest-300 leading-snug">
             {best.zone.name}
@@ -242,7 +239,7 @@ function DayCard({
               >
                 <span className="text-forest-400 truncate pr-1">{s.label}</span>
                 <span
-                  className={`font-semibold shrink-0 ${LEVEL_STYLE[s.level].text}`}
+                  className={`font-semibold shrink-0 ${PROBABILITY_LEVEL_TEXT[s.level]}`}
                 >
                   {s.score}%
                 </span>
@@ -265,19 +262,12 @@ function DayCard({
   );
 }
 
-function getLevelFromScore(score: number): ProbabilityLevel {
-  if (score >= 80) return "alta";
-  if (score >= 40) return "media";
-  return "bassa";
-}
-
 function LevelBadge({ level }: { level: ProbabilityLevel }) {
-  const style = LEVEL_STYLE[level];
   return (
     <span
-      className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${style.bg} ${style.text}`}
+      className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${PROBABILITY_LEVEL_CLASSES[level]}`}
     >
-      {style.label}
+      {PROBABILITY_LEVEL_LABELS[level]}
     </span>
   );
 }

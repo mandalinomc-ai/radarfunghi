@@ -265,8 +265,9 @@ function collectZoneResults(
 }
 
 function levelLabel(level: ProbabilityLevel): string {
-  if (level === "alta") return "Alta (>80%)";
-  if (level === "media") return "Media (40–80%)";
+  if (level === "dorato") return "Eccezionale / dorato (95–100%)";
+  if (level === "alta") return "Alta (80–94%)";
+  if (level === "media") return "Media (40–79%)";
   return "Bassa (<40%)";
 }
 
