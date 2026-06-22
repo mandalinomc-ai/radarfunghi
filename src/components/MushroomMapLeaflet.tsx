@@ -179,10 +179,10 @@ function HeatmapOverlay({
             radius={radius}
             pathOptions={{
               fillColor: scoreToColor(hotspot.activeScore),
-              fillOpacity: tier === "premium" ? 0.55 : 0.35,
+              fillOpacity: tier === "premium" ? 0.2 : 0.12,
               color: scoreToColor(hotspot.activeScore),
-              weight: 1,
-              opacity: tier === "premium" ? 0.3 : 0.15,
+              weight: 2,
+              opacity: tier === "premium" ? 0.55 : 0.45,
             }}
           />
         );

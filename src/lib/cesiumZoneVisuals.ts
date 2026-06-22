@@ -67,13 +67,13 @@ export function buildHotspotTerritoryEntity(
       semiMajorAxis: radius,
       semiMinorAxis: radius * 0.88,
       material: Cesium.Color.fromCssColorString(regionColor).withAlpha(
-        isSelected ? 0.48 : 0.32
+        isSelected ? 0.16 : 0.1
       ),
       outline: true,
       outlineColor: Cesium.Color.fromCssColorString(speciesColor).withAlpha(
-        isSelected ? 1 : 0.78
+        isSelected ? 0.92 : 0.72
       ),
-      outlineWidth: isSelected ? 5 : 3,
+      outlineWidth: isSelected ? 4 : 2.5,
       heightReference: clamp,
       extrudedHeight: extrude,
       numberOfVerticalLines: 0,
@@ -82,7 +82,7 @@ export function buildHotspotTerritoryEntity(
       length: beaconH,
       topRadius: isSelected ? 22 : 14,
       bottomRadius: isSelected ? 38 : 28,
-      material: Cesium.Color.fromCssColorString(speciesColor).withAlpha(0.82),
+      material: Cesium.Color.fromCssColorString(speciesColor).withAlpha(0.42),
       outline: true,
       outlineColor: Cesium.Color.WHITE.withAlpha(0.55),
       outlineWidth: 1,

@@ -1,46 +1,40 @@
 import type { MushroomSpecies } from "./types";
 
-export type ProbabilityLevel = "dorato" | "alta" | "media" | "bassa";
+export type ProbabilityLevel = "alta" | "media" | "bassa";
 export type ProbabilityFilter = ProbabilityLevel | "all";
 
-/** Dorato 95–100 · verde scuro alta · arancione media · rosso bassa/niente */
+/** Verde scuro alta · arancione media · rosso bassa/niente */
 export const PROBABILITY_RGBA: Record<ProbabilityLevel, string> = {
-  dorato: "rgba(212, 175, 55, 0.9)",
   alta: "rgba(22, 101, 52, 0.8)",
   media: "rgba(234, 88, 12, 0.75)",
   bassa: "rgba(239, 68, 68, 0.78)",
 };
 
 export const PROBABILITY_LEVEL_CLASSES: Record<ProbabilityLevel, string> = {
-  dorato: "text-yellow-100 bg-yellow-600/45 ring-1 ring-yellow-400/40",
   alta: "text-green-200 bg-green-900/55",
   media: "text-orange-300 bg-orange-600/25",
   bassa: "text-red-200 bg-red-600/35",
 };
 
 export const PROBABILITY_LEVEL_TEXT: Record<ProbabilityLevel, string> = {
-  dorato: "text-yellow-200",
   alta: "text-green-200",
   media: "text-orange-300",
   bassa: "text-red-200",
 };
 
 export const PROBABILITY_LEVEL_LABELS: Record<ProbabilityLevel, string> = {
-  dorato: "Dorato",
   alta: "Alta",
   media: "Media",
   bassa: "Bassa",
 };
 
 export const PROBABILITY_LEGEND: { label: string; color: string }[] = [
-  { label: "Eccezionale / dorato (95–100%)", color: PROBABILITY_RGBA.dorato },
-  { label: "Alta (80–94%)", color: PROBABILITY_RGBA.alta },
+  { label: "Alta (≥80%)", color: PROBABILITY_RGBA.alta },
   { label: "Media (40–79%)", color: PROBABILITY_RGBA.media },
   { label: "Bassa / niente (<40%)", color: PROBABILITY_RGBA.bassa },
 ];
 
 export function getProbabilityLevel(score: number): ProbabilityLevel {
-  if (score >= 95) return "dorato";
   if (score >= 80) return "alta";
   if (score >= 40) return "media";
   return "bassa";
@@ -51,9 +45,7 @@ export function matchesProbabilityFilter(
   filter: ProbabilityFilter
 ): boolean {
   if (filter === "all") return true;
-  const level = getProbabilityLevel(score);
-  if (filter === "alta") return level === "alta" || level === "dorato";
-  return level === filter;
+  return getProbabilityLevel(score) === filter;
 }
 
 export const PROBABILITY_FILTER_OPTIONS: {
@@ -63,12 +55,6 @@ export const PROBABILITY_FILTER_OPTIONS: {
   color: string;
 }[] = [
   { id: "all", label: "Tutte", shortLabel: "Tutte", color: "rgba(148, 163, 148, 0.8)" },
-  {
-    id: "dorato",
-    label: "Dorato (95–100%)",
-    shortLabel: "Dorato",
-    color: PROBABILITY_RGBA.dorato,
-  },
   {
     id: "alta",
     label: "Alta (≥80%)",
@@ -85,17 +71,15 @@ export const PROBABILITY_FILTER_OPTIONS: {
 ];
 
 export function scoreToColor(score: number): string {
-  if (score >= 95) return "rgba(212, 175, 55, 0.88)";
-  if (score >= 80) return "rgba(22, 101, 52, 0.75)";
-  if (score >= 60) return "rgba(234, 88, 12, 0.65)";
-  if (score >= 40) return "rgba(251, 146, 60, 0.62)";
-  if (score >= 20) return "rgba(239, 68, 68, 0.72)";
-  return "rgba(185, 28, 28, 0.78)";
+  if (score >= 80) return "rgba(22, 101, 52, 0.55)";
+  if (score >= 60) return "rgba(234, 88, 12, 0.45)";
+  if (score >= 40) return "rgba(251, 146, 60, 0.42)";
+  if (score >= 20) return "rgba(239, 68, 68, 0.5)";
+  return "rgba(185, 28, 28, 0.55)";
 }
 
 export function scoreToRadius(score: number): number {
-  const bonus = score >= 95 ? 80 : 0;
-  return 400 + score * 12 + bonus;
+  return 400 + score * 12;
 }
 
 export function getGoogleMapsDeepLink(
