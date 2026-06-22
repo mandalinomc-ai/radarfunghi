@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { formatDateISO } from "@/lib/dateUtils";
 import { aggregateAllZoneWeather } from "@/lib/weatherAggregator";
+import { getSharedCitizenSnapshot } from "@/lib/crossSourceIntel";
 import {
   isCacheFresh,
   readWeatherCache,
@@ -30,12 +31,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const snapshot = await aggregateAllZoneWeather(targetDate);
+    const [snapshot, citizenScience] = await Promise.all([
+      aggregateAllZoneWeather(targetDate),
+      getSharedCitizenSnapshot(force),
+    ]);
     await writeWeatherCache(snapshot);
 
     return NextResponse.json({
       ...snapshot,
       fromCache: false,
+      citizenScience: citizenScience
+        ? {
+            fetchedAt: citizenScience.fetchedAt,
+            inatTotal: citizenScience.inatTotal,
+            moTotal: citizenScience.moTotal,
+            observationCount: citizenScience.observations.length,
+          }
+        : null,
     });
   } catch (error) {
     const cached = await readWeatherCache();

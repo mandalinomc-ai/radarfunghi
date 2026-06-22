@@ -65,7 +65,10 @@ const INSTITUTIONAL_DOMAIN_PATTERNS: RegExp[] = [
   /unimol\.it$/i,
   /unibas\.it$/i,
   /ambbresadola\.it$/i,
+  /amint\.it$/i,
   /unionemicologicaitaliana-aps\.it$/i,
+  /mushroomobserver\.org$/i,
+  /inaturalist\.org$/i,
   /igmi\.org$/i,
   /indexfungorum\.org$/i,
   /open-meteo\.com$/i,
@@ -74,6 +77,8 @@ const INSTITUTIONAL_DOMAIN_PATTERNS: RegExp[] = [
 
 const EDITORIAL_DOMAIN_PATTERNS: RegExp[] = [
   /funghimagazine\.it$/i,
+  /first-nature\.com$/i,
+  /blogspot\.com$/i,
 ];
 
 const YOUTUBE_HOST = /^(www\.)?youtube\.com$/i;

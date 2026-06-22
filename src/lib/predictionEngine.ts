@@ -11,6 +11,10 @@ import { calculateEnvironmentalMalus } from "./environmentalMalus";
 import { getSocialBonusForRegion } from "./socialScraper";
 import { getReportReliabilityMultiplier } from "./zoneReliabilityBonus";
 import { getRegionalStatusForZone } from "./funghimagazineData";
+import {
+  getCachedCitizenSnapshot,
+  getCrossSourceMultiplier,
+} from "./crossSourceIntel";
 import { getZoneForDate } from "./zoneWeather";
 import { calculateHabitatScore } from "./speciesHabitat";
 import {
@@ -236,6 +240,13 @@ export function calculateSproutScore(
 
   const reportRel = getReportReliabilityMultiplier(z.id);
   score = clamp(score * reportRel.multiplier);
+
+  const cross = getCrossSourceMultiplier(
+    z,
+    species,
+    getCachedCitizenSnapshot()
+  );
+  score = clamp(score * cross.multiplier);
 
   const fmStatus = getRegionalStatusForZone(z.region, z.id);
   if (fmStatus) {

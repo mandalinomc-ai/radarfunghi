@@ -7,7 +7,9 @@ export type CertifiedSourceCategory =
   | "micologia"
   | "editoriale"
   | "youtube"
-  | "internazionale";
+  | "internazionale"
+  | "citizen-science"
+  | "app";
 
 export interface CertifiedSource {
   id: string;
@@ -32,4 +34,6 @@ export const CATEGORY_LABELS: Record<CertifiedSourceCategory, string> = {
   editoriale: "Editoriale specialistico",
   youtube: "YouTube / video divulgativi",
   internazionale: "Internazionale / UE",
+  "citizen-science": "Citizen science / osservazioni",
+  app: "App mobile (riferimento)",
 };

@@ -13,6 +13,9 @@ export interface OpenMeteoBundle {
     soil_moisture_0_to_7cm: number[];
     precipitation: number[];
     wind_speed_10m?: number[];
+    wind_gusts_10m?: number[];
+    surface_pressure?: number[];
+    cloud_cover?: number[];
   };
   daily: {
     time: string[];
@@ -64,7 +67,7 @@ export async function fetchOpenMeteoBundle(
   const hourlyUrl = `https://api.open-meteo.com/v1/forecast?${new URLSearchParams({
     ...Object.fromEntries(base),
     hourly:
-      "temperature_2m,relative_humidity_2m,soil_moisture_0_to_7cm,precipitation,wind_speed_10m",
+      "temperature_2m,relative_humidity_2m,soil_moisture_0_to_7cm,precipitation,wind_speed_10m,wind_gusts_10m,surface_pressure,cloud_cover",
     models: "best_match",
   })}`;
 
@@ -142,6 +145,9 @@ function buildHourlyForDate(
         ) / 10
       ),
       windSpeed: Math.round(data.hourly.wind_speed_10m?.[idx] ?? 8),
+      windGusts: Math.round(data.hourly.wind_gusts_10m?.[idx] ?? 12),
+      surfacePressure: Math.round(data.hourly.surface_pressure?.[idx] ?? 1013),
+      cloudCover: Math.round(data.hourly.cloud_cover?.[idx] ?? 40),
     };
   });
 }
@@ -288,11 +294,14 @@ export async function aggregateAllZoneWeather(
     targetDate,
     fetchedAt: new Date().toISOString(),
     sources: [
-      "Open-Meteo (ECMWF/GFS best_match)",
+      "Open-Meteo (ECMWF/GFS — pioggia, T, umidità, suolo, vento, raffiche, pressione)",
       "ARPA Campania",
       "ARPA Molise",
       "ARPA Basilicata",
       "Funghimagazine (editoriale)",
+      "iNaturalist API (osservazioni Fungi)",
+      "Mushroom Observer API",
+      "AMINT (monitoraggio nascite community)",
     ],
     zones,
     zoneCount: zones.length,

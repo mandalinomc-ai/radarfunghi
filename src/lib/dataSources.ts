@@ -1,4 +1,9 @@
-export type SourceCategory = "meteo" | "agrometeo" | "editoriale" | "geocoding";
+export type SourceCategory =
+  | "meteo"
+  | "agrometeo"
+  | "editoriale"
+  | "geocoding"
+  | "citizen-science";
 
 export interface OfficialDataSource {
   id: string;
@@ -74,6 +79,39 @@ export const OFFICIAL_DATA_SOURCES: OfficialDataSource[] = [
     url: "https://funghimagazine.it/",
     description:
       "Bollettino editoriale fungino, calendario specie e segnalazioni community — fonte specialistica verificabile.",
+    certified: true,
+    refreshIntervalMin: 1440,
+  },
+  {
+    id: "inaturalist",
+    name: "iNaturalist — osservazioni funghi (API live)",
+    shortName: "iNaturalist",
+    category: "citizen-science",
+    url: "https://www.inaturalist.org/",
+    description:
+      "Osservazioni geolocalizzate Fungi validate da community mondiale — integrato nello Sprout Score.",
+    certified: true,
+    refreshIntervalMin: 360,
+  },
+  {
+    id: "mushroom-observer",
+    name: "Mushroom Observer — mappa scientifica (API)",
+    shortName: "MushroomObserver",
+    category: "citizen-science",
+    url: "https://mushroomobserver.org/",
+    description:
+      "Progetto open-source: foto, coordinate e determinazioni micologiche globali.",
+    certified: true,
+    refreshIntervalMin: 720,
+  },
+  {
+    id: "amint",
+    name: "AMINT — monitoraggio nascite e forum",
+    shortName: "AMINT",
+    category: "editoriale",
+    url: "https://www.amint.it/",
+    description:
+      "Associazione Micologica Italiana Naturalistica Telematica: archivio foto, forum e nascite per regione.",
     certified: true,
     refreshIntervalMin: 1440,
   },

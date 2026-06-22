@@ -4,9 +4,11 @@ import { floodRecoveryRatePerDay } from "./zoneSoilRetention";
 export interface EnvironmentalMalusResult {
   floodMultiplier: number;
   windMultiplier: number;
+  pressureMultiplier: number;
   combinedMultiplier: number;
   rainLast3DaysMm: number;
   windyHoursLast48: number;
+  avgPressureHpa?: number;
 }
 
 function rainLastNDays(zone: FungalZone, days: number, beforeDate: string): number {
@@ -48,15 +50,46 @@ export function calculateFloodMalus(
 export function calculateWindMalus(zone: FungalZone): number {
   const recent = zone.hourlyForecasts.slice(-48);
   const windyHours = recent.filter(
-    (f) => (f.windSpeed ?? estimateWindFromHumidity(f.humidity)) > 15
+    (f) =>
+      (f.windSpeed ?? estimateWindFromHumidity(f.humidity)) > 15 ||
+      (f.windGusts ?? 0) > 22
   ).length;
   const moderateWind = recent.filter(
-    (f) => (f.windSpeed ?? estimateWindFromHumidity(f.humidity)) > 10
+    (f) =>
+      (f.windSpeed ?? estimateWindFromHumidity(f.humidity)) > 10 ||
+      (f.windGusts ?? 0) > 16
   ).length;
 
   if (windyHours > 6) return 0.6;
   if (windyHours > 3) return 0.75;
   if (moderateWind > 12) return 0.88;
+  return 1;
+}
+
+/**
+ * Pressione + nuvolosità — fronti in arrivo (pressione in calo) favoriscono umidità;
+ * alta pressione prolungata + cielo sereno asciuga il letto fogliare.
+ */
+export function calculatePressureMalus(zone: FungalZone): number {
+  const recent = zone.hourlyForecasts.slice(-24);
+  if (recent.length < 4) return 1;
+
+  const pressures = recent
+    .map((f) => f.surfacePressure)
+    .filter((p): p is number => typeof p === "number");
+  if (pressures.length < 4) return 1;
+
+  const avg = pressures.reduce((a, b) => a + b, 0) / pressures.length;
+  const delta = pressures[pressures.length - 1] - pressures[0];
+  const avgCloud =
+    recent
+      .map((f) => f.cloudCover ?? 50)
+      .reduce((a, b) => a + b, 0) / recent.length;
+
+  if (delta <= -4 && avgCloud > 45) return 1.06;
+  if (delta <= -2) return 1.03;
+  if (avg > 1022 && avgCloud < 25) return 0.92;
+  if (avg > 1018 && avgCloud < 15) return 0.96;
   return 1;
 }
 
@@ -70,18 +103,35 @@ export function calculateEnvironmentalMalus(
 ): EnvironmentalMalusResult {
   const floodMultiplier = calculateFloodMalus(zone, selectedDate);
   const windMultiplier = calculateWindMalus(zone);
+  const pressureMultiplier = calculatePressureMalus(zone);
   const rainLast3DaysMm = rainLastNDays(zone, 3, selectedDate);
   const windyHoursLast48 = zone.hourlyForecasts
     .slice(-48)
     .filter(
-      (f) => (f.windSpeed ?? estimateWindFromHumidity(f.humidity)) > 15
+      (f) =>
+        (f.windSpeed ?? estimateWindFromHumidity(f.humidity)) > 15 ||
+        (f.windGusts ?? 0) > 22
     ).length;
+
+  const pressures = zone.hourlyForecasts
+    .slice(-24)
+    .map((f) => f.surfacePressure)
+    .filter((p): p is number => typeof p === "number");
+  const avgPressureHpa =
+    pressures.length > 0
+      ? Math.round(
+          (pressures.reduce((a, b) => a + b, 0) / pressures.length) * 10
+        ) / 10
+      : undefined;
 
   return {
     floodMultiplier,
     windMultiplier,
-    combinedMultiplier: floodMultiplier * windMultiplier,
+    pressureMultiplier,
+    combinedMultiplier:
+      floodMultiplier * windMultiplier * pressureMultiplier,
     rainLast3DaysMm: Math.round(rainLast3DaysMm * 10) / 10,
     windyHoursLast48,
+    avgPressureHpa,
   };
 }

@@ -5,6 +5,7 @@ import { readWeatherCache } from "@/lib/weatherCache";
 import { CLIENT_AUTO_REFRESH_MS, SERVER_CRON_INTERVAL_MIN } from "@/lib/constants";
 import { getAllReports } from "@/lib/reportStore";
 import { getAllZoneReliability } from "@/lib/zoneReliabilityStore";
+import { getSharedCitizenSnapshot } from "@/lib/crossSourceIntel";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
 
   const reports = await getAllReports().catch(() => []);
   const zoneReliability = await getAllZoneReliability().catch(() => []);
+  const citizenScience = await getSharedCitizenSnapshot(force).catch(() => null);
   const fetchedAt =
     (weatherPayload?.fetchedAt as string) ?? new Date().toISOString();
   const ageMin = Math.round(
@@ -68,7 +70,11 @@ export async function GET(request: NextRequest) {
         ? weatherError
           ? "cached"
           : "live"
-        : src.category === "editoriale"
+        : src.id === "inaturalist" || src.id === "mushroom-observer"
+          ? citizenScience
+            ? "live"
+            : "cached"
+        : src.category === "editoriale" || src.category === "citizen-science"
           ? "editorial"
           : weatherError
             ? "cached"
@@ -76,6 +82,14 @@ export async function GET(request: NextRequest) {
     ageMinutes:
       src.id === "open-meteo" || src.id.startsWith("arpa")
         ? ageMin
+        : src.id === "inaturalist" || src.id === "mushroom-observer"
+          ? citizenScience
+            ? Math.round(
+                (Date.now() -
+                  new Date(citizenScience.fetchedAt).getTime()) /
+                  60000
+              )
+            : null
         : src.id === "funghimagazine"
           ? Math.max(
               0,
@@ -95,6 +109,14 @@ export async function GET(request: NextRequest) {
     sources,
     reportsCount: reports.length,
     zoneReliability,
+    citizenScience: citizenScience
+      ? {
+          fetchedAt: citizenScience.fetchedAt,
+          inatTotal: citizenScience.inatTotal,
+          moTotal: citizenScience.moTotal,
+          observationCount: citizenScience.observations.length,
+        }
+      : null,
     autoRefreshMs: CLIENT_AUTO_REFRESH_MS,
     serverCronMinutes: SERVER_CRON_INTERVAL_MIN,
     nextClientRefreshAt: new Date(

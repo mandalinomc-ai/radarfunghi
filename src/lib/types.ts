@@ -14,6 +14,12 @@ export interface HourlyForecast {
   soilMoisture: number;
   /** km/h da Open-Meteo wind_speed_10m */
   windSpeed?: number;
+  /** km/h raffiche */
+  windGusts?: number;
+  /** hPa pressione atmosferica */
+  surfacePressure?: number;
+  /** % copertura nuvolosa */
+  cloudCover?: number;
 }
 
 export interface CollectionWindow {

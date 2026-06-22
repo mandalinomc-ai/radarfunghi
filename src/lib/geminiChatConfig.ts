@@ -14,6 +14,7 @@ import { UNIVERSAL_SAFETY_RULES } from "./safetyEducation";
 import { formatCertifiedSourcesForGemini, formatVerifiedSourcesForGemini, CERTIFIED_SOURCES } from "./certifiedSources";
 import { formatYoutubeSourcesForGemini } from "./youtubeSources";
 import { getCachedVerifications } from "./sourceVerificationCache";
+import { getCachedCitizenSnapshot } from "./crossSourceIntel";
 import type { MastroHotspotPayload } from "./mastroHotspotMapper";
 import { getParkingLabel } from "./chatZoneResults";
 
@@ -247,6 +248,10 @@ export function buildMastroFungaioloSystemInstruction(
 ): string {
   const dateLabel = formatDateLabel(meta.selectedDate);
   const sourceBlock = buildVerifiedSourcesBlock();
+  const cs = getCachedCitizenSnapshot();
+  const citizenBlock = cs
+    ? `iNaturalist API: ${cs.inatTotal} osservazioni Fungi geolocalizzate nel radar (Campania/Molise/Basilicata). Mushroom Observer API: ${cs.moTotal} record nel bbox. Sync: ${cs.fetchedAt}. Questi dati incrociano Sprout Score, meteo (pressione/vento/raffiche da Open-Meteo) e segnali AMINT/Funghimagazine.`
+    : "Citizen science (iNaturalist/Mushroom Observer) in caricamento — usa Sprout Score e meteo live.";
 
   return `Sei l'Assistente AI ufficiale di MushroomRadar, un anziano Mastro Fungaiolo del Sud Italia. Il tuo carattere è schietto, pragmatico, caloroso e profondamente radicato nelle tradizioni locali dei boschi del Sannio, del Matese e dell'Irpinia. Conosci la biologia dei funghi a livello scientifico ed empirico.
 
@@ -259,6 +264,9 @@ CONTESTO RICERCA:
 - Fascia oraria: ${meta.hourRangeLabel}
 - Raggio: ${meta.rangeKm} km
 - Meteo live: ${meta.liveData ? "sì" : "cache/stimato"} · aggiornamento: ${meta.lastUpdate ?? "n/d"}
+
+CITIZEN SCIENCE & INCROCIO FONTI (iNaturalist, Mushroom Observer, AMINT, FM):
+${citizenBlock}
 
 TREND SOCIAL / COMMUNITY (contesto secondario, non sostituiscono gli Sprout Score):
 ${formatSocialTrendsForMastro(hotspots)}

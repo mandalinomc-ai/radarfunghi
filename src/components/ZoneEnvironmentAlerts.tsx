@@ -44,7 +44,19 @@ export default function ZoneEnvironmentAlerts({
   if (malus.windMultiplier < 1) {
     alerts.push({
       tone: "amber",
-      text: `Vento secco (${malus.windyHoursLast48}h >15 km/h) — lettiera a rischio, malus −25%.`,
+      text: `Vento/raffiche (${malus.windyHoursLast48}h critiche) — lettiera a rischio, malus vento.`,
+    });
+  }
+
+  if (malus.pressureMultiplier < 1 && malus.avgPressureHpa) {
+    alerts.push({
+      tone: "amber",
+      text: `Alta pressione (${malus.avgPressureHpa} hPa) e cielo sereno — suolo più secco, malus pressione.`,
+    });
+  } else if (malus.pressureMultiplier > 1) {
+    alerts.push({
+      tone: "green",
+      text: `Fronte umido in arrivo (pressione in calo) — bonus micelio da Open-Meteo.`,
     });
   }
 
