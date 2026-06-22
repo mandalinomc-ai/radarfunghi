@@ -1,4 +1,4 @@
-import type { MapHotspot, MushroomSpecies } from "./types";
+import type { FungalZone, MapHotspot, MushroomSpecies } from "./types";
 import {
   FM_NATIONAL_REPORT,
   FM_SOURCE,
@@ -65,6 +65,44 @@ export interface BeginnerRoadmap {
   warnings: string[];
   roadmap: RoadmapStep[];
   mapsLink: string;
+  fmSource: string;
+  fmSourceUrl: string;
+  weatherNote: string;
+}
+
+/** Analisi dedicata per una singola specie scelta dall'utente */
+export interface BeginnerSpeciesPlan {
+  species: MushroomSpecies;
+  speciesLabel: string;
+  recommendedZone: string;
+  region: FungalZone["region"] | null;
+  speciesScore: number;
+  trafficLight: FMTrafficLight;
+  fmSummary: string;
+  simpleVerdict: string;
+  departureTime: string;
+  arrivalTime: string;
+  collectionWindow: string;
+  driveMinutes: number;
+  walkMinutes: number;
+  coordinates: string;
+  parkingCoordinates: string;
+  forestType: string;
+  altitude: number;
+  yield: YieldEstimate;
+  totalExpected: string;
+  guideText: string;
+  roadmap: RoadmapStep[];
+  mapsLink: string;
+  viable: boolean;
+}
+
+export interface BeginnerGuideResult {
+  generatedAt: string;
+  requestedSpecies: MushroomSpecies[];
+  plans: BeginnerSpeciesPlan[];
+  equipment: string[];
+  warnings: string[];
   fmSource: string;
   fmSourceUrl: string;
   weatherNote: string;
@@ -158,6 +196,317 @@ export function estimateYields(
   }
 
   return yields;
+}
+
+function computeYieldForSpecies(
+  hotspot: MapHotspot,
+  species: MushroomSpecies,
+  selectedDate: string
+): YieldEstimate {
+  const all = estimateYields(hotspot, selectedDate);
+  const match = all.find((y) => y.species === species);
+  if (match) return match;
+
+  const pred = hotspot.predictions.find((p) => p.species === species);
+  const score = pred?.score ?? 0;
+  const fmStatus = getRegionalStatusForZone(hotspot.zone.region, hotspot.zone.id);
+  const soilCold = fmStatus?.soilStatus === "freddo";
+  const beforePorciniDate =
+    fmStatus?.porciniFrom != null &&
+    !isPastItalianDateRange(fmStatus.porciniFrom, selectedDate);
+
+  if (species === "porcino" && (soilCold || beforePorciniDate)) {
+    return {
+      species,
+      label: getSpeciesLabel(species),
+      min: 0,
+      max: score >= 70 ? 2 : 1,
+      unit: "esemplari",
+      confidence: "bassa",
+      note: `FM: suoli freddi — Porcini attesi dal ${fmStatus?.porciniFrom ?? "10-12 giugno"}`,
+    };
+  }
+
+  const base = score / 100;
+  let min = 0;
+  let max = 0;
+  if (species === "galletto") {
+    min = Math.max(score >= 35 ? 2 : 0, Math.round(base * 8));
+    max = Math.round(base * 20);
+  } else if (species === "estatino") {
+    min = Math.round(base * 3);
+    max = Math.round(base * 8);
+  } else {
+    min = Math.round(base * 2);
+    max = Math.round(base * 6);
+  }
+
+  return {
+    species,
+    label: getSpeciesLabel(species),
+    min,
+    max,
+    unit: species === "galletto" ? "finferli" : "esemplari",
+    confidence: score >= 65 ? "alta" : score >= 45 ? "media" : "bassa",
+    note: getHabitatRule(species).searchTips[0],
+  };
+}
+
+function rankHotspotForSpecies(
+  hotspot: MapHotspot,
+  species: MushroomSpecies
+): number {
+  const pred = hotspot.predictions.find((p) => p.species === species);
+  const speciesScore = pred?.score ?? 0;
+  let rank = speciesScore;
+  if (hotspot.activeSpecies === species) rank += 10;
+  if (hotspot.zone.species.includes(species)) rank += 6;
+  return rank;
+}
+
+function findBestHotspotForSpecies(
+  hotspots: MapHotspot[],
+  species: MushroomSpecies
+): { hotspot: MapHotspot; speciesScore: number; rank: number } | null {
+  const ranked = hotspots
+    .map((h) => ({
+      hotspot: h,
+      speciesScore: h.predictions.find((p) => p.species === species)?.score ?? 0,
+      rank: rankHotspotForSpecies(h, species),
+    }))
+    .filter((x) => x.rank >= 22 || x.hotspot.zone.species.includes(species))
+    .sort((a, b) => b.rank - a.rank);
+
+  return ranked[0] ?? null;
+}
+
+function buildSpeciesVerdict(
+  hotspot: MapHotspot,
+  species: MushroomSpecies,
+  speciesScore: number,
+  selectedDate: string
+): string {
+  const fm = getRegionalStatusForZone(hotspot.zone.region, hotspot.zone.id);
+  const day = formatDateLabel(selectedDate);
+  const label = getSpeciesLabel(species);
+  const zone = hotspot.zone.name;
+
+  if (speciesScore >= 72) {
+    return `Sì! ${day} ${zone} è ottimo per il ${label} (probabilità ${speciesScore}%). Segui la roadmap qui sotto.`;
+  }
+  if (speciesScore >= 52) {
+    return `${day} puoi cercare ${label} a ${zone}. Probabilità ${speciesScore}% — con pazienza dovresti trovare qualcosa.`;
+  }
+  if (species === "porcino" && fm?.soilStatus === "freddo") {
+    return `${day} i suoli di ${zone} sono ancora freddi per i Porcini (FM). Meglio aspettare dal ${fm.porciniFrom ?? "10-12 giugno"} o puntare ai Finferli.`;
+  }
+  if (speciesScore >= 30) {
+    return `${day} ${label} a ${zone}: possibilità moderate (${speciesScore}%). Non è la scelta ideale, ma puoi provare.`;
+  }
+  return `${day} ${zone} non è consigliato per il ${label} (solo ${speciesScore}%). Prova un altro giorno o allarga il raggio di ricerca.`;
+}
+
+function buildTimingForZone(zone: FungalZone, driveMin: number, walkMin: number) {
+  const collectionStart = zone.collectionWindow.startHour;
+  const collectionStartMin = zone.collectionWindow.startMinute;
+  const departureTotalMin =
+    collectionStart * 60 + collectionStartMin - driveMin - walkMin - 15;
+  const depHour = Math.max(4, Math.floor(departureTotalMin / 60));
+  const depMin = Math.max(0, departureTotalMin % 60);
+  return {
+    departureTime: formatTime(depHour, depMin),
+    arrivalTime: formatTime(collectionStart, collectionStartMin),
+    collectionWindow: zone.collectionWindow.label,
+  };
+}
+
+function buildSpeciesRoadmap(
+  hotspot: MapHotspot,
+  species: MushroomSpecies,
+  yieldEst: YieldEstimate,
+  origin: GeoPoint,
+  tier: ServiceTier,
+  selectedDate: string
+): RoadmapStep[] {
+  const { zone } = hotspot;
+  const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
+  const driveMin = zone.driveMinutesFromBenevento;
+  const walkMin = estimateWalkMinutes(zone.altitude);
+  const { departureTime, arrivalTime } = buildTimingForZone(zone, driveMin, walkMin);
+  const displayCoords = getHotspotDisplayCoordinates(hotspot, tier);
+  const label = getSpeciesLabel(species);
+  const [depHour, depMin] = departureTime.split(":").map(Number);
+
+  return [
+    {
+      step: 1,
+      time: departureTime,
+      title: `Parti per il ${label}`,
+      description: `Da ${origin.name} imposta il navigatore verso ${displayCoords.parking}. Viaggio: ${formatDriveFromOrigin(origin.name, driveMin)}. Porta cesto, coltello e acqua.`,
+      icon: "🚗",
+    },
+    {
+      step: 2,
+      time: formatTime(depHour + Math.floor(driveMin / 60), (depMin + driveMin) % 60),
+      title: "Parcheggia",
+      description: `Accesso a ${zone.name} (${zone.altitude}m). Da qui ~${walkMin} min a piedi nel bosco (${zone.forestType}).`,
+      icon: "🅿️",
+    },
+    {
+      step: 3,
+      time: arrivalTime,
+      title: `Cerca ${label}`,
+      description: `${yieldEst.note} Stima: ${yieldEst.min === 0 ? "0" : yieldEst.min}-${yieldEst.max} ${yieldEst.unit}. ${getHabitatRule(species).substrateHints[0]}. ${fmStatus?.summary ?? ""}`,
+      icon: "🍄",
+    },
+    {
+      step: 4,
+      time: `${arrivalTime} – ${formatTime(zone.collectionWindow.endHour, zone.collectionWindow.endMinute)}`,
+      title: "Raccogli con prudenza",
+      description: getSpeciesGuideText(species),
+      icon: "🔍",
+    },
+    {
+      step: 5,
+      time: formatTime(zone.collectionWindow.endHour, zone.collectionWindow.endMinute),
+      title: "Torna al parcheggio",
+      description:
+        "Taglia il gambo, non strappare. Lascia i piccoli. Controllo ASL obbligatorio prima del consumo.",
+      icon: "🔙",
+    },
+  ];
+}
+
+function formatYieldExpected(y: YieldEstimate): string {
+  if (y.min === 0 && y.max <= 1) return `0-1 ${y.label.toLowerCase()}`;
+  return `${y.min === 0 ? "0" : y.min}-${y.max} ${y.unit} di ${y.label.toLowerCase()}`;
+}
+
+const SHARED_EQUIPMENT = [
+  "Cesto di vimini o sacco di carta (mai sacchetti di plastica)",
+  "Coltello da funghi",
+  "Acqua (1-2 litri)",
+  "Giacca leggera impermeabile",
+  "Scarpe da trekking",
+  "Guida ai funghi o app di riconoscimento",
+  "Telefono carico con GPS",
+];
+
+export function generateBeginnerGuidePlans(
+  hotspots: MapHotspot[],
+  selectedDate: string,
+  _hourRange: HourRange,
+  origin: GeoPoint,
+  tier: ServiceTier = "free",
+  targetSpecies: MushroomSpecies[]
+): BeginnerGuideResult | null {
+  if (targetSpecies.length === 0) return null;
+
+  const plans: BeginnerSpeciesPlan[] = [];
+
+  for (const species of targetSpecies) {
+    const match = findBestHotspotForSpecies(hotspots, species);
+
+    if (!match) {
+      plans.push({
+        species,
+        speciesLabel: getSpeciesLabel(species),
+        recommendedZone: "—",
+        region: null,
+        speciesScore: 0,
+        trafficLight: "giallo",
+        fmSummary: "",
+        simpleVerdict: `Nessuna zona nel raggio attuale con dati sufficienti per il ${getSpeciesLabel(species)}. Allarga la distanza o cambia giorno.`,
+        departureTime: "—",
+        arrivalTime: "—",
+        collectionWindow: "—",
+        driveMinutes: 0,
+        walkMinutes: 0,
+        coordinates: "—",
+        parkingCoordinates: "—",
+        forestType: "—",
+        altitude: 0,
+        yield: {
+          species,
+          label: getSpeciesLabel(species),
+          min: 0,
+          max: 0,
+          unit: species === "galletto" ? "finferli" : "esemplari",
+          confidence: "bassa",
+          note: "Nessuna stima disponibile",
+        },
+        totalExpected: "Nessuna stima",
+        guideText: getSpeciesGuideText(species),
+        roadmap: [],
+        mapsLink: "#",
+        viable: false,
+      });
+      continue;
+    }
+
+    const { hotspot, speciesScore } = match;
+    const { zone } = hotspot;
+    const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
+    const driveMin = zone.driveMinutesFromBenevento;
+    const walkMin = estimateWalkMinutes(zone.altitude);
+    const timing = buildTimingForZone(zone, driveMin, walkMin);
+    const yieldEst = computeYieldForSpecies(hotspot, species, selectedDate);
+    const displayCoords = getHotspotDisplayCoordinates(hotspot, tier);
+    const viable = speciesScore >= 28;
+
+    plans.push({
+      species,
+      speciesLabel: getSpeciesLabel(species),
+      recommendedZone: zone.name,
+      region: zone.region,
+      speciesScore,
+      trafficLight: fmStatus?.trafficLight ?? "giallo",
+      fmSummary: fmStatus?.summary ?? FM_NATIONAL_REPORT.southItalyNote,
+      simpleVerdict: buildSpeciesVerdict(hotspot, species, speciesScore, selectedDate),
+      ...timing,
+      driveMinutes: driveMin,
+      walkMinutes: walkMin,
+      coordinates: displayCoords.foraging,
+      parkingCoordinates: displayCoords.parking,
+      forestType: zone.forestType,
+      altitude: zone.altitude,
+      yield: yieldEst,
+      totalExpected: formatYieldExpected(yieldEst),
+      guideText: getSpeciesGuideText(species),
+      roadmap: buildSpeciesRoadmap(
+        hotspot,
+        species,
+        yieldEst,
+        origin,
+        tier,
+        selectedDate
+      ),
+      mapsLink: displayCoords.mapsLinkParking,
+      viable,
+    });
+  }
+
+  const hasAnyZone = plans.some((p) => p.recommendedZone !== "—");
+  if (!hasAnyZone) return null;
+
+  const primary = plans.find((p) => p.viable) ?? plans[0];
+  const warnings = [
+    ...getSafetyWarningsForSpecies(primary.species).slice(0, 2),
+    formatRegulationSummary(primary.region ?? "sannio"),
+    `Previsioni FM ${FM_WEATHER_LIVE.date}: ${FM_WEATHER_LIVE.headline}`,
+    "Porta scarpe da trekking: al mattino fa fresco in bosco.",
+  ];
+
+  return {
+    generatedAt: new Date().toISOString(),
+    requestedSpecies: targetSpecies,
+    plans,
+    equipment: SHARED_EQUIPMENT,
+    warnings,
+    fmSource: FM_SOURCE.name,
+    fmSourceUrl: FM_SOURCE.articleUrl,
+    weatherNote: FM_WEATHER_LIVE.today,
+  };
 }
 
 function buildSimpleVerdict(
@@ -347,11 +696,6 @@ export function generateBeginnerRoadmap(
   };
 }
 
-export function getBestHotspot(hotspots: MapHotspot[]): MapHotspot | null {
-  const sorted = [...hotspots].sort((a, b) => b.activeScore - a.activeScore);
-  return sorted[0] ?? null;
-}
-
 export function getSpeciesGuideText(species: MushroomSpecies): string {
   const rule = getHabitatRule(species);
   const lookalike = getLookalikesForSpecies(species)[0];
@@ -369,4 +713,21 @@ export function getSpeciesGuideText(species: MushroomSpecies): string {
   }
   text += "Controllo ASL obbligatorio prima del consumo.";
   return text;
+}
+
+export function buildGuideChatPrompt(
+  plan?: BeginnerSpeciesPlan,
+  species?: MushroomSpecies[]
+): string {
+  if (plan && plan.recommendedZone !== "—") {
+    return `Ho consultato la guida principianti per ${plan.speciesLabel}. Zona consigliata: ${plan.recommendedZone} (${plan.speciesScore}% · stima ${plan.totalExpected}). Puoi approfondire dove cercare esattamente, sicurezza, lookalike e condizioni attuali del bosco?`;
+  }
+  if (plan) {
+    return `Sto cercando ${plan.speciesLabel} ma la guida non ha trovato zone ideali nel raggio attuale. Puoi consigliarmi dove andare, che giorno provare e cosa aspettarmi?`;
+  }
+  if (species && species.length > 0) {
+    const labels = species.map((s) => getSpeciesLabel(s)).join(", ");
+    return `Sono alle prime armi e voglio cercare: ${labels}. Puoi guidarmi passo passo — zone, orari, sicurezza e cosa portare?`;
+  }
+  return "Non so quale fungo cercare e sono alle prime armi. Puoi guidarmi passo passo su specie, zone e sicurezza?";
 }

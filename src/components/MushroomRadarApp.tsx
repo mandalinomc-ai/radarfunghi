@@ -2,7 +2,7 @@
 
 
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import dynamic from "next/dynamic";
 
@@ -12,7 +12,8 @@ import { FUNGAL_ZONES } from "@/lib/mockData";
 
 import { buildCityDualPreview } from "@/lib/cityDayPreview";
 
-import { generateBeginnerRoadmap, type BeginnerRoadmap } from "@/lib/beginnerGuide";
+import { generateBeginnerGuidePlans, type BeginnerGuideResult } from "@/lib/beginnerGuide";
+import { buildHotspots } from "@/lib/predictionEngine";
 
 import { DEFAULT_SEARCH_RADIUS_KM } from "@/lib/benevento";
 import type { GeoPoint } from "@/lib/geoUtils";
@@ -176,9 +177,8 @@ export default function MushroomRadarApp() {
 
   const [beginnerOpen, setBeginnerOpen] = useState(false);
 
-  const [beginnerRoadmap, setBeginnerRoadmap] =
-
-    useState<BeginnerRoadmap | null>(null);
+  const [beginnerGuide, setBeginnerGuide] =
+    useState<BeginnerGuideResult | null>(null);
 
   const [guideLoading, setGuideLoading] = useState(false);
 
@@ -192,6 +192,7 @@ export default function MushroomRadarApp() {
   const [setupOpen, setSetupOpen] = useState(false);
   const [guideParked, setGuideParked] = useState(false);
   const [guideOpenTrigger, setGuideOpenTrigger] = useState(0);
+  const pendingChatMessageRef = useRef<string | null>(null);
 
   useEffect(() => {
     const timeOk = loadTimeWindowConfirmed();
@@ -219,9 +220,12 @@ export default function MushroomRadarApp() {
     setOriginBootstrapped(true);
   }, []);
 
-  const openMastroChat = useCallback(() => {
+  const openMastroChat = useCallback((initialMessage?: string) => {
     if (!originReady) return;
     setFabHintSeen(true);
+    if (initialMessage?.trim()) {
+      pendingChatMessageRef.current = initialMessage.trim();
+    }
     if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
       setChatOpen(true);
       setMobilePanel(null);
@@ -307,7 +311,7 @@ export default function MushroomRadarApp() {
     setGuideParked(false);
     saveGuideParked(false);
     setBeginnerOpen(false);
-    setBeginnerRoadmap(null);
+    setBeginnerGuide(null);
     setGuideOpenTrigger((n) => n + 1);
   }, []);
 
@@ -379,6 +383,17 @@ export default function MushroomRadarApp() {
         }
       },
     });
+
+  useEffect(() => {
+    const chatVisible = chatOpen || mobilePanel === "chat";
+    if (!chatVisible || !pendingChatMessageRef.current) return;
+    const msg = pendingChatMessageRef.current;
+    pendingChatMessageRef.current = null;
+    const timer = window.setTimeout(() => {
+      void sendMessage(msg);
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [chatOpen, mobilePanel, sendMessage]);
 
   const handleChatZoneSelect = useCallback(
     (result: ChatZoneResult) => {
@@ -539,8 +554,15 @@ export default function MushroomRadarApp() {
       setMobilePanel(null);
 
       setTimeout(() => {
-        const roadmap = generateBeginnerRoadmap(
-          filteredHotspots,
+        const guideHotspots = buildHotspots(
+          zonesInRange,
+          "all",
+          criteria.hourRange,
+          criteria.selectedDate
+        );
+
+        const result = generateBeginnerGuidePlans(
+          guideHotspots,
           criteria.selectedDate,
           criteria.hourRange,
           criteria.origin,
@@ -548,19 +570,23 @@ export default function MushroomRadarApp() {
           targetSpecies
         );
 
-        setBeginnerRoadmap(roadmap);
+        setBeginnerGuide(result);
 
-        if (roadmap) {
-          const match = filteredHotspots.find(
-            (h) => h.zone.name === roadmap.recommendedZone
-          );
-          if (match) setSelectedHotspot(match);
+        if (result) {
+          const bestPlan =
+            result.plans.find((p) => p.viable) ?? result.plans[0];
+          if (bestPlan?.recommendedZone !== "—") {
+            const match = guideHotspots.find(
+              (h) => h.zone.name === bestPlan.recommendedZone
+            );
+            if (match) setSelectedHotspot(match);
+          }
         }
 
         setGuideLoading(false);
       }, 600);
     },
-    [filteredHotspots, criteria, originReady, tier]
+    [zonesInRange, criteria, originReady, tier]
   );
 
 
@@ -1004,17 +1030,17 @@ export default function MushroomRadarApp() {
 
 
       <BeginnerGuidePanel
-        roadmap={beginnerRoadmap}
+        guideResult={beginnerGuide}
         isOpen={beginnerOpen}
         parked={guideParked}
         onClose={() => {
           setBeginnerOpen(false);
-          setBeginnerRoadmap(null);
+          setBeginnerGuide(null);
           setGuideLoading(false);
         }}
         onPark={() => {
           setBeginnerOpen(false);
-          setBeginnerRoadmap(null);
+          setBeginnerGuide(null);
           setGuideLoading(false);
           setGuideParked(true);
           saveGuideParked(true);
@@ -1024,6 +1050,7 @@ export default function MushroomRadarApp() {
           saveGuideParked(false);
         }}
         onGenerate={handleBeginnerGuide}
+        onOpenChat={openMastroChat}
         isLoading={guideLoading}
         hasDetailOpen={!!selectedHotspot}
         originReady={originReady}

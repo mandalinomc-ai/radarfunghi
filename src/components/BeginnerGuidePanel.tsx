@@ -1,26 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { BeginnerRoadmap } from "@/lib/beginnerGuide";
+import { useEffect, useState } from "react";
 import {
-  FM_TRAFFIC_LIGHT_COLORS,
-  FM_TRAFFIC_LIGHT_LABELS,
-} from "@/lib/funghimagazineData";
-import { getSpeciesGuideText } from "@/lib/beginnerGuide";
+  buildGuideChatPrompt,
+  type BeginnerGuideResult,
+  type BeginnerSpeciesPlan,
+} from "@/lib/beginnerGuide";
+import { FM_TRAFFIC_LIGHT_COLORS } from "@/lib/funghimagazineData";
 import { formatDateLabel, todayISO } from "@/lib/dateUtils";
 import type { MushroomSpecies } from "@/lib/types";
 import { getSpeciesLabel } from "@/lib/predictionEngine";
+import BeginnerGuideBanner from "./BeginnerGuideBanner";
 
 const ALL_SPECIES: MushroomSpecies[] = ["porcino", "estatino", "galletto"];
 
+const SPECIES_EMOJI: Record<MushroomSpecies, string> = {
+  porcino: "🟤",
+  estatino: "🟡",
+  galletto: "🟠",
+};
+
 interface BeginnerGuidePanelProps {
-  roadmap: BeginnerRoadmap | null;
+  guideResult: BeginnerGuideResult | null;
   isOpen: boolean;
   parked: boolean;
   onClose: () => void;
   onPark: () => void;
   onUnpark: () => void;
   onGenerate: (species: MushroomSpecies[]) => void;
+  onOpenChat: (initialMessage?: string) => void;
   isLoading: boolean;
   hasDetailOpen?: boolean;
   originReady?: boolean;
@@ -29,40 +37,150 @@ interface BeginnerGuidePanelProps {
   openTrigger?: number;
 }
 
+function GuideChatCta({
+  title,
+  subtitle,
+  onChat,
+  compact,
+}: {
+  title: string;
+  subtitle: string;
+  onChat: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`guide-chat-cta rounded-2xl ${compact ? "p-3" : "p-4 md:p-5"} transition-colors`}
+    >
+      <div className={`flex ${compact ? "flex-col gap-2" : "flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"}`}>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-400/90 font-semibold mb-1">
+            Mastro Fungaiolo AI
+          </p>
+          <p className={`font-display text-forest-100 leading-snug ${compact ? "text-base" : "text-lg md:text-xl"}`}>
+            {title}
+          </p>
+          <p className="text-xs text-forest-400 mt-1 leading-relaxed">{subtitle}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onChat}
+          className={`guide-chat-btn shrink-0 inline-flex items-center justify-center gap-2 rounded-xl text-white font-bold touch-manipulation transition-all ${
+            compact ? "w-full py-2.5 text-sm" : "px-5 py-3.5 text-sm"
+          }`}
+        >
+          <span className="text-lg" aria-hidden>
+            💬
+          </span>
+          Chatta col bot
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PanelChrome({
+  eyebrow,
+  title,
+  subtitle,
+  onPark,
+  onClose,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  onPark: () => void;
+  onClose?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[1004] pointer-events-auto flex items-end md:items-center justify-center guide-shell-overlay p-0 md:p-6 safe-top"
+      onClick={onPark}
+    >
+      <div
+        className="guide-panel rounded-t-3xl md:rounded-3xl w-full max-w-3xl max-h-[94dvh] md:max-h-[88vh] overflow-hidden flex flex-col shadow-2xl safe-bottom"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="guide-panel-header shrink-0 px-5 md:px-8 py-4 md:py-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-mushroom-400/90 font-semibold">
+              {eyebrow}
+            </p>
+            <h2 className="font-display text-2xl md:text-3xl text-forest-100 mt-1 leading-tight">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="text-xs text-forest-500 mt-1.5 max-w-md leading-relaxed">
+                {subtitle}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={onPark}
+              className="w-9 h-9 rounded-xl bg-forest-950/60 border border-forest-700/40 text-forest-400 flex items-center justify-center touch-manipulation hover:bg-forest-800/60"
+              title="Minimizza"
+            >
+              −
+            </button>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-9 h-9 rounded-xl bg-forest-950/60 border border-forest-700/40 text-forest-300 flex items-center justify-center touch-manipulation hover:bg-forest-800/60"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto overscroll-contain">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function EmptyGuideMessage({
   selectedDate,
   onClose,
   onPark,
+  onOpenChat,
 }: {
   selectedDate: string;
   onClose: () => void;
   onPark: () => void;
+  onOpenChat: (msg?: string) => void;
 }) {
   const dayLabel = formatDateLabel(selectedDate);
   return (
-    <div
-      className="fixed inset-0 z-[1004] pointer-events-auto flex items-center justify-center bg-forest-950/80 backdrop-blur-sm p-4"
-      onClick={onPark}
+    <PanelChrome
+      eyebrow="Analisi completata"
+      title="Nessuna zona nel raggio"
+      subtitle={`Per ${dayLabel} non abbiamo trovato zone con probabilità sufficiente.`}
+      onPark={onPark}
+      onClose={onClose}
     >
-      <div
-        className="bg-forest-900 border border-forest-600 rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <p className="text-4xl mb-4">😔</p>
-        <h2 className="text-xl font-bold text-forest-200 mb-2">
-          Nessuna zona consigliata
-        </h2>
-        <p className="text-sm text-forest-400 mb-6 leading-relaxed">
-          Per <strong className="text-forest-300">{dayLabel}</strong> non ci sono
-          zone con probabilità sufficiente per le specie scelte. Prova ad
-          allargare il raggio, cambiare giorno/orario o selezionare altre
-          specie.
+      <div className="p-5 md:p-8 space-y-6">
+        <p className="text-sm text-forest-400 leading-relaxed">
+          Prova ad allargare il raggio, cambiare giorno o chiedere al Mastro Fungaiolo
+          un piano personalizzato.
         </p>
+        <GuideChatCta
+          title="Vuoi sapere di più?"
+          subtitle="Il bot AI legge meteo, zone e Sprout Score come la mappa — chiedigli dove provare."
+          onChat={() => {
+            onPark();
+            onOpenChat(buildGuideChatPrompt());
+          }}
+        />
         <div className="flex gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-3 rounded-xl bg-forest-800 text-forest-300 font-semibold touch-manipulation"
+            className="flex-1 px-4 py-3 rounded-xl bg-forest-800/80 border border-forest-700/40 text-forest-300 font-semibold touch-manipulation"
           >
             Riprova
           </button>
@@ -75,7 +193,7 @@ function EmptyGuideMessage({
           </button>
         </div>
       </div>
-    </div>
+    </PanelChrome>
   );
 }
 
@@ -84,44 +202,23 @@ function SpeciesPicker({
   onToggle,
   onConfirm,
   onPark,
+  onOpenChat,
 }: {
   selected: MushroomSpecies[];
   onToggle: (s: MushroomSpecies) => void;
   onConfirm: () => void;
   onPark: () => void;
+  onOpenChat: (msg?: string) => void;
 }) {
   return (
-    <div
-      className="fixed inset-0 z-[1004] pointer-events-auto flex items-end md:items-center justify-center bg-forest-950/75 backdrop-blur-sm p-0 md:p-4"
-      onClick={onPark}
+    <PanelChrome
+      eyebrow="Passo 1 · Selezione"
+      title="Che funghi cerchi?"
+      subtitle="Ogni specie riceve un dossier dedicato con zona, stima e roadmap."
+      onPark={onPark}
     >
-      <div
-        className="bg-forest-900 border border-mushroom-500/30 rounded-t-2xl md:rounded-2xl w-full max-w-md shadow-2xl safe-bottom"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="px-5 py-4 border-b border-forest-700/40 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-mushroom-400">
-              Passo 1
-            </p>
-            <h2 className="text-lg font-bold text-forest-100">
-              Che funghi cerchi?
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onPark}
-            className="w-9 h-9 rounded-lg bg-forest-800 text-forest-400 touch-manipulation"
-            title="Parcheggia guida"
-          >
-            −
-          </button>
-        </div>
-        <div className="p-5 space-y-3">
-          <p className="text-xs text-forest-400 leading-relaxed">
-            Seleziona una o più specie. Poi ti dirò dove andare, quando partire
-            e cosa aspettarti.
-          </p>
+      <div className="p-5 md:p-8 space-y-5">
+        <div className="space-y-2.5">
           {ALL_SPECIES.map((sp) => {
             const active = selected.includes(sp);
             return (
@@ -129,46 +226,68 @@ function SpeciesPicker({
                 key={sp}
                 type="button"
                 onClick={() => onToggle(sp)}
-                className={`w-full text-left px-4 py-3 rounded-xl border touch-manipulation transition-colors ${
+                className={`w-full text-left px-4 py-4 rounded-2xl border touch-manipulation transition-all ${
                   active
-                    ? "border-mushroom-500/60 bg-mushroom-500/15 text-mushroom-100"
-                    : "border-forest-700/50 bg-forest-950/50 text-forest-300"
+                    ? "border-mushroom-400/50 bg-mushroom-500/12 shadow-[0_0_0_1px_rgba(245,154,74,0.15)_inset]"
+                    : "border-forest-700/40 bg-forest-950/40 hover:border-forest-600/50"
                 }`}
               >
-                <span className="font-semibold text-sm">
-                  {active ? "✓ " : ""}
-                  {getSpeciesLabel(sp)}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xl" aria-hidden>
+                    {SPECIES_EMOJI[sp]}
+                  </span>
+                  <div>
+                    <span className="font-semibold text-sm text-forest-100 block">
+                      {active ? "✓ " : ""}
+                      {getSpeciesLabel(sp)}
+                    </span>
+                    <span className="text-[10px] text-forest-500 uppercase tracking-wider">
+                      Analisi radar dedicata
+                    </span>
+                  </div>
+                </div>
               </button>
             );
           })}
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={selected.length === 0}
-            className="w-full py-3.5 rounded-xl bg-mushroom-500 hover:bg-mushroom-400 disabled:opacity-40 text-white font-bold text-sm touch-manipulation mt-2"
-          >
-            Dimmi tutto
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={selected.length === 0}
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-mushroom-500 to-mushroom-400 disabled:opacity-40 text-white font-bold text-sm touch-manipulation shadow-lg shadow-mushroom-500/20"
+        >
+          Genera {selected.length}{" "}
+          {selected.length === 1 ? "dossier" : "dossier"}
+        </button>
+
+        <GuideChatCta
+          compact
+          title="Non sai quale scegliere?"
+          subtitle="Chiedi al Mastro — ti guida passo passo."
+          onChat={() => {
+            onPark();
+            onOpenChat(buildGuideChatPrompt(undefined, selected));
+          }}
+        />
       </div>
-    </div>
+    </PanelChrome>
   );
 }
 
 export default function BeginnerGuidePanel({
-  roadmap,
+  guideResult,
   isOpen,
   parked,
   onClose,
   onPark,
   onUnpark,
   onGenerate,
+  onOpenChat,
   isLoading,
   hasDetailOpen,
   originReady = true,
   selectedDate = todayISO(),
-  className = "bottom-[278px] md:bottom-[255px]",
   openTrigger = 0,
 }: BeginnerGuidePanelProps) {
   const [species, setSpecies] = useState<MushroomSpecies[]>(["porcino"]);
@@ -183,6 +302,11 @@ export default function BeginnerGuidePanel({
   const openGuide = () => {
     onUnpark();
     setShowSpecies(true);
+  };
+
+  const handleOpenChat = (msg?: string) => {
+    onPark();
+    onOpenChat(msg);
   };
 
   const toggleSpecies = (sp: MushroomSpecies) => {
@@ -203,28 +327,14 @@ export default function BeginnerGuidePanel({
   };
 
   if (!isOpen && !isLoading && !showSpecies && originReady) {
-    if (parked || hasDetailOpen) {
-      return (
-        <button
-          type="button"
-          onClick={openGuide}
-          disabled={isLoading}
-          className={`fixed ${className.replace("absolute", "")} left-3 z-[1001] pointer-events-auto w-12 h-12 rounded-full bg-mushroom-600/90 hover:bg-mushroom-500 text-white text-xl shadow-lg border border-mushroom-400/40 touch-manipulation flex items-center justify-center`}
-          title="Guida principianti — non so niente"
-        >
-          🍄
-        </button>
-      );
-    }
     return (
-      <button
-        type="button"
-        onClick={openGuide}
-        disabled={isLoading}
-        className={`md:hidden absolute ${className} left-1/2 -translate-x-1/2 z-[1001] pointer-events-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-mushroom-500 to-mushroom-400 text-white font-bold text-sm tracking-wide text-center shadow-lg border border-mushroom-300/40 touch-manipulation max-w-[calc(100%-1.5rem)]`}
-      >
-        🍄 Non so niente — che fungo cerco?
-      </button>
+      <BeginnerGuideBanner
+        parked={parked || !!hasDetailOpen}
+        compact={!!hasDetailOpen && !parked}
+        onOpen={openGuide}
+        onPark={handlePark}
+        onOpenChat={() => handleOpenChat(buildGuideChatPrompt())}
+      />
     );
   }
 
@@ -251,24 +361,35 @@ export default function BeginnerGuidePanel({
         onToggle={toggleSpecies}
         onConfirm={handleConfirmSpecies}
         onPark={handlePark}
+        onOpenChat={handleOpenChat}
       />
     );
   }
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-[1004] pointer-events-auto flex items-center justify-center bg-forest-950/80 backdrop-blur-sm">
-        <div className="bg-forest-900 border border-forest-600 rounded-2xl p-8 max-w-md text-center shadow-2xl">
-          <div className="w-12 h-12 border-3 border-mushroom-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-forest-300">
-            Sto analizzando meteo, zone e le specie che hai scelto...
+      <PanelChrome
+        eyebrow="Elaborazione"
+        title="Analisi in corso"
+        subtitle="Meteo live, Sprout Score e habitat per ogni specie scelta."
+        onPark={handlePark}
+      >
+        <div className="p-8 md:p-12 flex flex-col items-center text-center">
+          <div className="relative w-16 h-16 mb-6">
+            <div className="absolute inset-0 rounded-full guide-score-ring opacity-30 animate-spin" style={{ ["--score-pct" as string]: "75" }} />
+            <div className="absolute inset-2 rounded-full bg-forest-950 flex items-center justify-center text-2xl">
+              🍄
+            </div>
+          </div>
+          <p className="text-sm text-forest-300 max-w-xs leading-relaxed">
+            Sto costruendo i dossier personalizzati per le specie selezionate…
           </p>
         </div>
-      </div>
+      </PanelChrome>
     );
   }
 
-  if (!roadmap) {
+  if (!guideResult) {
     return (
       <EmptyGuideMessage
         selectedDate={selectedDate}
@@ -277,135 +398,196 @@ export default function BeginnerGuidePanel({
           onClose();
         }}
         onPark={handlePark}
+        onOpenChat={handleOpenChat}
       />
     );
   }
 
+  const { plans, equipment, warnings } = guideResult;
+
   return (
-    <div
-      className="fixed inset-0 z-[1004] pointer-events-auto flex items-end md:items-center justify-center bg-forest-950/70 backdrop-blur-sm p-0 md:p-4 safe-top"
-      onClick={handlePark}
+    <PanelChrome
+      eyebrow="Intelligence report"
+      title={plans.length === 1 ? "Il tuo dossier" : `${plans.length} dossier specie`}
+      subtitle="Analisi radar per principianti · zone, timing, stime e sicurezza"
+      onPark={handlePark}
+      onClose={onClose}
     >
-      <div
-        className="bg-forest-900 border border-mushroom-500/30 rounded-t-2xl md:rounded-2xl w-full max-w-2xl max-h-[92dvh] md:max-h-[85vh] overflow-y-auto shadow-2xl safe-bottom"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sticky top-0 bg-forest-900/95 backdrop-blur-lg border-b border-forest-700/40 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-mushroom-400">
-              Guida per principianti
+      <div className="p-5 md:p-8 space-y-6 pb-8">
+        {plans.map((plan, index) => (
+          <SpeciesPlanCard
+            key={plan.species}
+            plan={plan}
+            index={index}
+            onOpenChat={() =>
+              handleOpenChat(buildGuideChatPrompt(plan))
+            }
+          />
+        ))}
+
+        <GuideChatCta
+          title="Vuoi approfondire?"
+          subtitle="Chiedi al Mastro dettagli su habitat, lookalike, regolamento o alternative di zona."
+          onChat={() =>
+            handleOpenChat(
+              buildGuideChatPrompt(
+                plans.find((p) => p.viable) ?? plans[0],
+                guideResult.requestedSpecies
+              )
+            )
+          }
+        />
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="guide-metric rounded-2xl p-4 md:p-5">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-forest-500 mb-3">
+              Equipaggiamento
             </p>
-            <h2 className="text-xl font-bold text-forest-100">
-              La tua spedizione fungina
-            </h2>
+            <ul className="space-y-2">
+              {equipment.map((item) => (
+                <li
+                  key={item}
+                  className="text-xs text-forest-300 flex items-start gap-2 leading-relaxed"
+                >
+                  <span className="text-mushroom-400 mt-0.5 shrink-0">◆</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="flex gap-1">
-            <button
-              type="button"
-              onClick={handlePark}
-              className="w-9 h-9 rounded-lg bg-forest-800 hover:bg-forest-700 text-forest-400 flex items-center justify-center touch-manipulation text-sm"
-              title="Parcheggia (icona 🍄)"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-9 h-9 rounded-lg bg-forest-800 hover:bg-forest-700 text-forest-300 flex items-center justify-center touch-manipulation"
-            >
-              ✕
-            </button>
+
+          <div className="rounded-2xl p-4 md:p-5 bg-red-950/25 border border-red-900/30">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-red-400/90 mb-3">
+              Sicurezza & regolamento
+            </p>
+            <ul className="space-y-2">
+              {warnings.map((w, i) => (
+                <li key={i} className="text-xs text-red-200/85 leading-relaxed flex gap-2">
+                  <span className="shrink-0">⚠</span>
+                  {w}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        <div className="p-4 md:p-6 space-y-4 md:space-y-5 pb-6">
-          <div className="bg-gradient-to-r from-mushroom-500/20 to-forest-600/20 rounded-xl p-4 border border-mushroom-500/20">
-            <p className="text-lg font-semibold text-forest-100 leading-relaxed">
-              {roadmap.simpleVerdict}
-            </p>
-            <div className="flex items-center gap-3 mt-3">
-              <span
-                className="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
-                style={{
-                  backgroundColor: `${FM_TRAFFIC_LIGHT_COLORS[roadmap.trafficLight]}33`,
-                  color: FM_TRAFFIC_LIGHT_COLORS[roadmap.trafficLight],
-                }}
-              >
-                {FM_TRAFFIC_LIGHT_LABELS[roadmap.trafficLight]}
+        <p className="text-[10px] text-center text-forest-600 tracking-wide">
+          Sprout Score · Funghimagazine · Meteo live
+        </p>
+      </div>
+    </PanelChrome>
+  );
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  return (
+    <div className="relative w-14 h-14 shrink-0">
+      <div
+        className="absolute inset-0 rounded-full guide-score-ring p-[3px]"
+        style={{ ["--score-pct" as string]: String(Math.min(100, score)) }}
+      >
+        <div className="w-full h-full rounded-full bg-forest-950 flex items-center justify-center">
+          <span className="text-sm font-bold text-mushroom-400 font-mono">{score}%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpeciesPlanCard({
+  plan,
+  index,
+  onOpenChat,
+}: {
+  plan: BeginnerSpeciesPlan;
+  index: number;
+  onOpenChat: () => void;
+}) {
+  return (
+    <section className="guide-species-card relative rounded-2xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-forest-700/30 flex items-center gap-4">
+        <ScoreBadge score={plan.speciesScore} />
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-mushroom-400/80">
+            Dossier {index + 1} · {SPECIES_EMOJI[plan.species]} {plan.speciesLabel}
+          </p>
+          <h3 className="font-display text-xl text-forest-100 truncate">
+            {plan.recommendedZone}
+          </h3>
+        </div>
+        <span
+          className="hidden sm:inline px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider shrink-0"
+          style={{
+            backgroundColor: `${FM_TRAFFIC_LIGHT_COLORS[plan.trafficLight]}22`,
+            color: FM_TRAFFIC_LIGHT_COLORS[plan.trafficLight],
+          }}
+        >
+          FM
+        </span>
+      </div>
+
+      <div className="p-5 space-y-5">
+        <blockquote className="border-l-2 border-mushroom-400/60 pl-4 py-1">
+          <p className="text-sm text-forest-100 leading-relaxed font-medium">
+            {plan.simpleVerdict}
+          </p>
+        </blockquote>
+
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+          <Metric label="Stima raccolta" value={plan.totalExpected} accent />
+          <Metric label="Partenza" value={plan.departureTime} />
+          <Metric label="Arrivo bosco" value={plan.arrivalTime} />
+          <Metric label="Finestra" value={plan.collectionWindow} />
+          <Metric label="Quota" value={plan.altitude ? `${plan.altitude} m` : "—"} />
+          <Metric label="Habitat" value={plan.forestType} />
+        </div>
+
+        <div className="guide-metric rounded-xl p-4">
+          <div className="flex justify-between items-baseline gap-2 mb-2">
+            <span className="text-xs uppercase tracking-wider text-forest-500">
+              Resa stimata · {plan.yield.label}
+            </span>
+            <span className="text-lg font-bold text-mushroom-400 font-mono">
+              {plan.yield.min === 0 ? "0" : plan.yield.min}–{plan.yield.max}{" "}
+              <span className="text-xs font-sans font-normal text-forest-400">
+                {plan.yield.unit}
               </span>
-              <span className="text-sm text-mushroom-400 font-bold">
-                Score {roadmap.score}%
-              </span>
-            </div>
+            </span>
           </div>
+          <p className="text-[11px] text-forest-500">
+            Affidabilità {plan.yield.confidence} — {plan.yield.note}
+          </p>
+          <p className="text-[11px] text-forest-400 mt-2 italic leading-relaxed border-t border-forest-800/60 pt-2">
+            {plan.guideText}
+          </p>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-            <InfoCard label="Dove andare" value={roadmap.recommendedZone} />
-            <InfoCard
-              label="Quanto puoi trovare"
-              value={roadmap.totalExpected}
-              highlight
-            />
-            <InfoCard label="Parti alle" value={roadmap.departureTime} />
-            <InfoCard label="Arriva alle" value={roadmap.arrivalTime} />
-            <InfoCard label="Finestra raccolta" value={roadmap.collectionWindow} />
-            <InfoCard label="Quota" value={`${roadmap.altitude} m`} />
-          </div>
-
+        {plan.roadmap.length > 0 && (
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-forest-500 mb-2">
-              Stima quantità per specie
-            </p>
-            <div className="space-y-2">
-              {roadmap.yields.map((y) => (
-                <div
-                  key={y.species}
-                  className="bg-forest-950/60 rounded-lg p-3 border border-forest-700/30"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-forest-200">
-                      {y.label}
-                    </span>
-                    <span className="text-sm font-bold text-mushroom-400">
-                      {y.min === 0 ? "0" : y.min}-{y.max} {y.unit}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-forest-500 mt-1">
-                    Affidabilità: {y.confidence} — {y.note}
-                  </p>
-                  <p className="text-[10px] text-forest-400 mt-1 italic">
-                    {getSpeciesGuideText(y.species as MushroomSpecies)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-forest-500 mb-3">
-              Roadmap passo-passo
+            <p className="text-[10px] uppercase tracking-[0.2em] text-forest-500 mb-4">
+              Itinerario operativo
             </p>
             <div className="space-y-0">
-              {roadmap.roadmap.map((step, i) => (
-                <div key={step.step} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full bg-forest-700 flex items-center justify-center text-lg shrink-0">
+              {plan.roadmap.map((step, i) => (
+                <div key={step.step} className="flex gap-4">
+                  <div className="flex flex-col items-center w-10 shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-forest-800/80 border border-forest-700/50 flex items-center justify-center text-lg">
                       {step.icon}
                     </div>
-                    {i < roadmap.roadmap.length - 1 && (
-                      <div className="w-0.5 flex-1 bg-forest-700 my-1 min-h-[24px]" />
+                    {i < plan.roadmap.length - 1 && (
+                      <div className="w-px flex-1 guide-timeline-line my-1.5 min-h-[28px]" />
                     )}
                   </div>
-                  <div className="pb-4 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-mushroom-400">
+                  <div className="pb-5 flex-1 pt-0.5">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <span className="text-xs font-mono text-mushroom-400/90">
                         {step.time}
                       </span>
-                      <span className="text-sm font-semibold text-forest-200">
+                      <span className="text-sm font-semibold text-forest-100">
                         {step.title}
                       </span>
                     </div>
-                    <p className="text-xs text-forest-400 mt-1 leading-relaxed">
+                    <p className="text-xs text-forest-400 mt-1.5 leading-relaxed">
                       {step.description}
                     </p>
                   </div>
@@ -413,68 +595,51 @@ export default function BeginnerGuidePanel({
               ))}
             </div>
           </div>
+        )}
 
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-forest-500 mb-2">
-              Cosa portare
-            </p>
-            <ul className="grid grid-cols-2 gap-1">
-              {roadmap.equipment.map((item) => (
-                <li
-                  key={item}
-                  className="text-xs text-forest-300 flex items-center gap-1.5"
-                >
-                  <span className="text-mushroom-400">✓</span> {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="bg-red-950/30 border border-red-800/30 rounded-xl p-4">
-            <p className="text-[10px] uppercase tracking-wider text-red-400 mb-2">
-              Attenzione
-            </p>
-            <ul className="space-y-1">
-              {roadmap.warnings.map((w, i) => (
-                <li key={i} className="text-xs text-red-300/90">
-                  ⚠️ {w}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <a
-            href={roadmap.mapsLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full py-4 rounded-xl bg-gradient-to-r from-mushroom-500 to-mushroom-600 hover:from-mushroom-400 hover:to-mushroom-500 text-white text-center font-bold text-sm tracking-wide shadow-lg transition-all"
+        <div className="flex flex-col sm:flex-row gap-2">
+          {plan.mapsLink !== "#" && (
+            <a
+              href={plan.mapsLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-mushroom-500 to-mushroom-600 hover:from-mushroom-400 hover:to-mushroom-500 text-white text-center font-bold text-sm shadow-lg shadow-mushroom-500/15 transition-all touch-manipulation"
+            >
+              🧭 Navigatore
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={onOpenChat}
+            className="flex-1 py-3.5 rounded-xl guide-chat-btn text-white text-center font-bold text-sm touch-manipulation"
           >
-            🧭 APRI NAVIGATORE — VAI AL PARCHEGGIO
-          </a>
+            💬 Chiedi al Mastro
+          </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
-function InfoCard({
+function Metric({
   label,
   value,
-  highlight,
+  accent,
 }: {
   label: string;
   value: string;
-  highlight?: boolean;
+  accent?: boolean;
 }) {
   return (
-    <div className="bg-forest-950/60 rounded-lg p-3 border border-forest-700/30">
-      <p className="text-[10px] uppercase tracking-wider text-forest-500">
+    <div className="guide-metric rounded-xl px-3 py-2.5">
+      <p className="text-[9px] uppercase tracking-[0.15em] text-forest-500 truncate">
         {label}
       </p>
       <p
-        className={`text-sm font-semibold mt-0.5 ${
-          highlight ? "text-mushroom-400" : "text-forest-200"
+        className={`text-sm font-semibold mt-0.5 truncate ${
+          accent ? "text-mushroom-400" : "text-forest-200"
         }`}
+        title={value}
       >
         {value}
       </p>
