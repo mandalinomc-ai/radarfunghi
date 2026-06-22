@@ -3,6 +3,19 @@ import type { MushroomSpecies } from "./types";
 export type ProbabilityLevel = "alta" | "media" | "bassa";
 export type ProbabilityFilter = ProbabilityLevel | "all";
 
+/** Rosso = bassa/niente · arancione = media · verde scuro = alta */
+export const PROBABILITY_RGBA: Record<ProbabilityLevel, string> = {
+  alta: "rgba(22, 101, 52, 0.8)",
+  media: "rgba(234, 88, 12, 0.75)",
+  bassa: "rgba(220, 38, 38, 0.7)",
+};
+
+export const PROBABILITY_LEVEL_CLASSES: Record<ProbabilityLevel, string> = {
+  alta: "text-green-200 bg-green-900/55",
+  media: "text-orange-300 bg-orange-600/25",
+  bassa: "text-red-300 bg-red-700/40",
+};
+
 export function getProbabilityLevel(score: number): ProbabilityLevel {
   if (score >= 80) return "alta";
   if (score >= 40) return "media";
@@ -24,16 +37,16 @@ export const PROBABILITY_FILTER_OPTIONS: {
   color: string;
 }[] = [
   { id: "all", label: "Tutte", shortLabel: "Tutte", color: "rgba(148, 163, 148, 0.8)" },
-  { id: "alta", label: "Alta (>80%)", shortLabel: "Alta", color: "rgba(228, 90, 30, 0.8)" },
-  { id: "media", label: "Media (40-80%)", shortLabel: "Media", color: "rgba(245, 154, 74, 0.7)" },
-  { id: "bassa", label: "Bassa (<40%)", shortLabel: "Bassa", color: "rgba(61, 107, 56, 0.6)" },
+  { id: "alta", label: "Alta (>80%)", shortLabel: "Alta", color: PROBABILITY_RGBA.alta },
+  { id: "media", label: "Media (40-80%)", shortLabel: "Media", color: PROBABILITY_RGBA.media },
+  { id: "bassa", label: "Bassa (<40%)", shortLabel: "Bassa", color: PROBABILITY_RGBA.bassa },
 ];
 
 export function scoreToColor(score: number): string {
-  if (score >= 80) return "rgba(228, 90, 30, 0.65)";
-  if (score >= 60) return "rgba(245, 154, 74, 0.55)";
-  if (score >= 40) return "rgba(122, 184, 114, 0.45)";
-  return "rgba(61, 107, 56, 0.3)";
+  if (score >= 80) return "rgba(22, 101, 52, 0.75)";
+  if (score >= 60) return "rgba(234, 88, 12, 0.65)";
+  if (score >= 40) return "rgba(251, 146, 60, 0.6)";
+  return "rgba(220, 38, 38, 0.55)";
 }
 
 export function scoreToRadius(score: number): number {

@@ -1,14 +1,8 @@
 "use client";
 
 import type { MapHotspot, MushroomReport, SpyZoneMarker } from "@/lib/types";
-import { getProbabilityLevel } from "@/lib/mapUtils";
+import { getProbabilityLevel, PROBABILITY_LEVEL_CLASSES } from "@/lib/mapUtils";
 import { getSpeciesLabel } from "@/lib/predictionEngine";
-
-const LEVEL_STYLE = {
-  alta: "text-orange-300 bg-orange-600/30",
-  media: "text-amber-300 bg-amber-600/25",
-  bassa: "text-forest-400 bg-forest-700/50",
-} as const;
 
 const REPORT_TYPE_LABELS: Record<MushroomReport["reportType"], string> = {
   bottata: "Bottata",
@@ -18,7 +12,7 @@ const REPORT_TYPE_LABELS: Record<MushroomReport["reportType"], string> = {
 
 export function HotspotPreviewCard({ hotspot }: { hotspot: MapHotspot }) {
   const level = getProbabilityLevel(hotspot.activeScore);
-  const levelStyle = LEVEL_STYLE[level];
+  const levelStyle = PROBABILITY_LEVEL_CLASSES[level];
 
   return (
     <div className="map-preview-card pointer-events-none select-none">

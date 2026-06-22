@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ChatZoneResult } from "@/lib/mushroomChatEngine";
 import { SUGGESTED_CHAT_PROMPTS } from "@/lib/mushroomChatEngine";
 import type { ChatMessage } from "@/hooks/useMushroomChat";
-import { getProbabilityLevel } from "@/lib/mapUtils";
+import { getProbabilityLevel, PROBABILITY_LEVEL_CLASSES } from "@/lib/mapUtils";
 import type { SocialCitationSummary } from "@/lib/socialEvidence";
 import { platformLabel } from "@/lib/socialEvidence";
 
@@ -17,12 +17,6 @@ interface MushroomChatPanelProps {
   compact?: boolean;
   className?: string;
 }
-
-const LEVEL_COLOR = {
-  alta: "text-orange-300 bg-orange-600/25",
-  media: "text-amber-300 bg-amber-600/20",
-  bassa: "text-forest-400 bg-forest-700/50",
-};
 
 export default function MushroomChatPanel({
   messages,
@@ -375,7 +369,7 @@ function ZoneResultCard({
   highlighted?: boolean;
 }) {
   const level = getProbabilityLevel(result.score);
-  const style = LEVEL_COLOR[level];
+  const style = PROBABILITY_LEVEL_CLASSES[level];
 
   return (
     <div

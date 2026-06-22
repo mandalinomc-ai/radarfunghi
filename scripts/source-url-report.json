@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-06-22T00:57:54.684Z",
+  "checkedAt": "2026-06-22T21:15:21.995Z",
   "ok": [
     {
       "id": "legge-352-93",
@@ -40,6 +40,15 @@
     {
       "id": "iss",
       "shortName": "ISS",
+      "url": "https://www.iss.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.iss.it/",
+      "method": "http"
+    },
+    {
+      "id": "iss-cav",
+      "shortName": "ISS CAV",
       "url": "https://www.iss.it/",
       "ok": true,
       "status": 200,
@@ -254,15 +263,6 @@
       "method": "http"
     },
     {
-      "id": "parco-abruzzo",
-      "shortName": "PNALM",
-      "url": "https://www.parcoabruzzo.it/",
-      "ok": true,
-      "status": 200,
-      "finalUrl": "https://www.parcoabruzzo.it/",
-      "method": "http"
-    },
-    {
       "id": "amb",
       "shortName": "AMB",
       "url": "https://www.ambbresadola.it/",
@@ -344,6 +344,42 @@
       "method": "http"
     },
     {
+      "id": "zoffoli-blog",
+      "shortName": "Zoffoli Blog",
+      "url": "https://prevedereuscitaporcini.blogspot.com/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://prevedereuscitaporcini.blogspot.com/",
+      "method": "http"
+    },
+    {
+      "id": "zoffoli-modello",
+      "shortName": "Zoffoli Modello",
+      "url": "https://prevedereuscitaporcini.blogspot.com/2016/09/il-modellodi-previsione-il-modello.html",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://prevedereuscitaporcini.blogspot.com/2016/09/il-modellodi-previsione-il-modello.html",
+      "method": "http"
+    },
+    {
+      "id": "zoffoli-mappa-fb",
+      "shortName": "Mappa Porcini FB",
+      "url": "https://www.facebook.com/mappadeiporcini",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.facebook.com/mappadeiporcini",
+      "method": "http"
+    },
+    {
+      "id": "zoffoli-mappa-gruppo",
+      "shortName": "Gruppo Mappa Porcini",
+      "url": "https://www.facebook.com/groups/mappadeiporcini",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.facebook.com/groups/mappadeiporcini",
+      "method": "http"
+    },
+    {
       "id": "efsa",
       "shortName": "EFSA",
       "url": "https://www.efsa.europa.eu/",
@@ -420,6 +456,66 @@
       "method": "youtube-oembed"
     },
     {
+      "id": "yt-oppicelli-porcini-giugno-faggeta",
+      "shortName": "YT Oppicelli Faggeta Giugno",
+      "url": "https://www.youtube.com/watch?v=PZhhFUJq_RU",
+      "ok": true,
+      "title": "Faggeta secca? I porcini di giugno nascono dove non guardi",
+      "author": "Nicolo Oppicelli - Passione Funghi",
+      "authorUrl": "https://www.youtube.com/@nicolo.oppicelli",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-oppicelli-porcini-temporale-giugno",
+      "shortName": "YT Oppicelli Temporale Giugno",
+      "url": "https://www.youtube.com/watch?v=23-etMMyI2M",
+      "ok": true,
+      "title": "Porcini di giugno, il temporale arriva: dove cercare i primi Boletus aestivalis",
+      "author": "Nicolo Oppicelli - Passione Funghi",
+      "authorUrl": "https://www.youtube.com/@nicolo.oppicelli",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-oppicelli-porcini-caldo-giugno",
+      "shortName": "YT Oppicelli Caldo Giugno",
+      "url": "https://www.youtube.com/watch?v=l3zCbzwhnaE",
+      "ok": true,
+      "title": "I porcini di giugno, quando il caldo li spacca",
+      "author": "Nicolo Oppicelli - Passione Funghi",
+      "authorUrl": "https://www.youtube.com/@nicolo.oppicelli",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-oppicelli-porcini-appennino-giugno",
+      "shortName": "YT Oppicelli Appennino Giugno",
+      "url": "https://www.youtube.com/watch?v=ZDLG5Paa8as",
+      "ok": true,
+      "title": "Porcini in appennino a Giugno",
+      "author": "Nicolo Oppicelli - Passione Funghi",
+      "authorUrl": "https://www.youtube.com/@nicolo.oppicelli",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-oppicelli-porcini-estivi-primavera",
+      "shortName": "YT Oppicelli Estatini Primavera",
+      "url": "https://www.youtube.com/watch?v=YD2aoITqVas",
+      "ok": true,
+      "title": "I funghi porcini \"estivi\" in primavera",
+      "author": "Nicolo Oppicelli - Passione Funghi",
+      "authorUrl": "https://www.youtube.com/@nicolo.oppicelli",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-oppicelli-porcini-timelapse",
+      "shortName": "YT Oppicelli Timelapse",
+      "url": "https://www.youtube.com/watch?v=isqrAgLuBuw",
+      "ok": true,
+      "title": "Porcini in timelapse: una settimana di crescita in pochi secondi",
+      "author": "Nicolo Oppicelli - Passione Funghi",
+      "authorUrl": "https://www.youtube.com/@nicolo.oppicelli",
+      "method": "youtube-oembed"
+    },
+    {
       "id": "yt-channel-calamini",
       "shortName": "YT @alessandrocalamini",
       "url": "https://www.youtube.com/@alessandrocalamini",
@@ -445,16 +541,65 @@
       "status": 200,
       "finalUrl": "https://www.youtube.com/@nicolo.oppicelli?cbrd=1&ucbcb=1",
       "method": "http"
+    },
+    {
+      "id": "yt-fungonauta-porcini-giugno-2026",
+      "shortName": "YT Fungonauta Giugno 2026",
+      "url": "https://www.youtube.com/watch?v=YYNIu9fIdN8",
+      "ok": true,
+      "title": "Finalmente il Faggio 😍 I Primi Porcini (Giugno 2026)",
+      "author": "Il fungonauta ",
+      "authorUrl": "https://www.youtube.com/@Ilfungonauta",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-fungonauta-porcini-2026",
+      "shortName": "YT Fungonauta Porcini 2026",
+      "url": "https://www.youtube.com/watch?v=wb0y4qSWloo",
+      "ok": true,
+      "title": "Porcini 2026, si Inizia a Fare sul Serio 😎",
+      "author": "Il fungonauta ",
+      "authorUrl": "https://www.youtube.com/@Ilfungonauta",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-fungonauta-finferli",
+      "shortName": "YT Fungonauta Finferli",
+      "url": "https://www.youtube.com/watch?v=axaCelJr8Sc",
+      "ok": true,
+      "title": "Come Trovare più Finferli (Cantharellus Pallens): L'Habitat Perfetto",
+      "author": "Il fungonauta ",
+      "authorUrl": "https://www.youtube.com/@Ilfungonauta",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-fungonauta-porcini-larvati",
+      "shortName": "YT Fungonauta Larvati",
+      "url": "https://www.youtube.com/watch?v=qQqj2sHS4G0",
+      "ok": true,
+      "title": "Porcini Larvati/Bacati: Perché Succede, soprattutto in Estate? (e Come Valutare se Prenderli)",
+      "author": "Il fungonauta ",
+      "authorUrl": "https://www.youtube.com/@Ilfungonauta",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-channel-fungonauta",
+      "shortName": "YT @ilfungonauta",
+      "url": "https://www.youtube.com/@ilfungonauta",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/@ilfungonauta?cbrd=1&ucbcb=1",
+      "method": "http"
     }
   ],
   "broken": [
     {
-      "id": "iss-cav",
-      "shortName": "ISS CAV",
-      "url": "https://www.iss.it/web/iss-it/servizi/centri-antiveleni",
+      "id": "parco-abruzzo",
+      "shortName": "PNALM",
+      "url": "https://www.parcoabruzzo.it/",
       "ok": false,
-      "status": 404,
-      "finalUrl": "https://www.iss.it/web/iss-it/servizi/centri-antiveleni",
+      "status": 0,
+      "error": "fetch failed",
       "method": "http"
     },
     {

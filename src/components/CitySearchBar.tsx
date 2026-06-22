@@ -21,9 +21,9 @@ const LEVEL_STYLE: Record<
   ProbabilityLevel,
   { bg: string; text: string; label: string }
 > = {
-  alta: { bg: "bg-orange-600/30", text: "text-orange-300", label: "Alta" },
-  media: { bg: "bg-amber-600/25", text: "text-amber-300", label: "Media" },
-  bassa: { bg: "bg-forest-700/60", text: "text-forest-400", label: "Bassa" },
+  alta: { bg: "bg-green-900/55", text: "text-green-200", label: "Alta" },
+  media: { bg: "bg-orange-600/25", text: "text-orange-300", label: "Media" },
+  bassa: { bg: "bg-red-700/40", text: "text-red-300", label: "Bassa" },
 };
 
 export default function CitySearchBar({

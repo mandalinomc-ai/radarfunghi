@@ -1,8 +1,7 @@
 const LEGEND_ITEMS = [
-  { label: "Alta (>80%)", color: "rgba(228, 90, 30, 0.8)" },
-  { label: "Media (60-80%)", color: "rgba(245, 154, 74, 0.7)" },
-  { label: "Moderata (40-60%)", color: "rgba(122, 184, 114, 0.6)" },
-  { label: "Bassa (<40%)", color: "rgba(61, 107, 56, 0.4)" },
+  { label: "Alta (>80%)", color: "rgba(22, 101, 52, 0.8)" },
+  { label: "Media (40-80%)", color: "rgba(234, 88, 12, 0.75)" },
+  { label: "Bassa / niente (<40%)", color: "rgba(220, 38, 38, 0.7)" },
   { label: "Segnalazione utente (con foto)", color: "rgba(34, 197, 94, 0.9)" },
 ];
 
