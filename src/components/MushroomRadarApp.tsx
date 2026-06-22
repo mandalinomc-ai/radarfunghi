@@ -77,7 +77,16 @@ import LegendContent from "./LegendContent";
 import ReportMushroomSheet from "./ReportMushroomSheet";
 import SpyZonePastePanel from "./SpyZonePastePanel";
 import SpyZoneDetailPanel from "./SpyZoneDetailPanel";
-import WeatherSpyRadarPanel from "./WeatherSpyRadarPanel";
+
+const WeatherSpyRadarPanel = dynamic(() => import("./WeatherSpyRadarPanel"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center p-8 text-sm text-forest-400">
+      Caricamento meteo…
+    </div>
+  ),
+});
+
 import CompassGuidePanel from "./CompassGuidePanel";
 import { useSpyZones } from "@/hooks/useSpyZones";
 import ReportDetailPanel from "./ReportDetailPanel";

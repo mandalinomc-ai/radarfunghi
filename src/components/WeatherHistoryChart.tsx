@@ -7,6 +7,8 @@ import {
   BarElement,
   LineElement,
   PointElement,
+  BarController,
+  LineController,
   Title,
   Tooltip,
   Legend,
@@ -22,6 +24,8 @@ ChartJS.register(
   BarElement,
   LineElement,
   PointElement,
+  BarController,
+  LineController,
   Title,
   Tooltip,
   Legend
@@ -36,7 +40,17 @@ export default function WeatherHistoryChart({
   history,
   compact,
 }: WeatherHistoryChartProps) {
-  const labels = history.points.map((p) => p.date.slice(5));
+  const points = history.points ?? [];
+
+  if (points.length === 0) {
+    return (
+      <div className="h-48 flex items-center justify-center text-xs text-forest-500">
+        Nessun dato meteo disponibile per il periodo selezionato.
+      </div>
+    );
+  }
+
+  const labels = points.map((p) => p.date.slice(5));
 
   const data: ChartData<"bar" | "line", number[], string> = {
     labels,
@@ -44,7 +58,7 @@ export default function WeatherHistoryChart({
       {
         type: "bar" as const,
         label: "Precipitazioni (mm)",
-        data: history.points.map((p) => p.precipitationMm),
+        data: points.map((p) => p.precipitationMm ?? 0),
         backgroundColor: "rgba(59, 130, 246, 0.55)",
         borderColor: "rgba(96, 165, 250, 0.9)",
         borderWidth: 1,
@@ -54,7 +68,7 @@ export default function WeatherHistoryChart({
       {
         type: "line" as const,
         label: "Umidità relativa (%)",
-        data: history.points.map((p) => p.humidityPct),
+        data: points.map((p) => p.humidityPct ?? 0),
         borderColor: "rgba(74, 222, 128, 0.95)",
         backgroundColor: "rgba(74, 222, 128, 0.1)",
         borderWidth: 2,
@@ -66,7 +80,7 @@ export default function WeatherHistoryChart({
       {
         type: "line" as const,
         label: "Raffiche vento max (km/h)",
-        data: history.points.map((p) => p.windGustsKmh),
+        data: points.map((p) => p.windGustsKmh ?? 0),
         borderColor: "rgba(251, 146, 60, 0.95)",
         backgroundColor: "rgba(251, 146, 60, 0.08)",
         borderWidth: 2,
@@ -109,6 +123,7 @@ export default function WeatherHistoryChart({
       yRain: {
         type: "linear",
         position: "left",
+        beginAtZero: true,
         title: {
           display: !compact,
           text: "mm",
@@ -133,11 +148,8 @@ export default function WeatherHistoryChart({
       yWind: {
         type: "linear",
         position: "right",
-        offset: true,
-        title: {
-          display: false,
-        },
-        ticks: { display: false },
+        beginAtZero: true,
+        display: false,
         grid: { drawOnChartArea: false },
       },
     },
@@ -145,7 +157,7 @@ export default function WeatherHistoryChart({
 
   return (
     <div className={compact ? "h-48" : "h-64 md:h-72"}>
-      <Chart type="bar" data={data} options={options} />
+      <Chart type="bar" data={data} options={options} redraw />
     </div>
   );
 }

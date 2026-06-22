@@ -92,7 +92,10 @@ export default function ClimateAlertBox({
     moved: boolean;
   } | null>(null);
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     setParked(loadClimateParked());
     setPos(loadClimatePosition() ?? defaultClimatePosition());
   }, []);
@@ -211,8 +214,10 @@ export default function ClimateAlertBox({
       ? { left: pos.x, top: pos.y, right: "auto" }
       : { left: 8, top: 8, right: 8 };
 
+  if (!mounted) return null;
+
   if (parked) {
-    const chipPos = pos ?? defaultClimatePosition();
+    const chipPos = pos ?? { x: 16, y: 80 };
     return (
       <button
         type="button"

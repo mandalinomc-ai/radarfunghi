@@ -113,7 +113,8 @@ export default function WeatherSpyRadarPanel({
             </h2>
             <p className="text-[10px] text-forest-500 mt-0.5">
               Open-Meteo LIVE · {originName} (
-              {origin.lat.toFixed(2)}, {origin.lng.toFixed(2)})
+              {(origin?.lat ?? 42.5).toFixed(2)}, {(origin?.lng ?? 12.5).toFixed(2)}
+              )
             </p>
           </div>
           <button
@@ -155,7 +156,13 @@ export default function WeatherSpyRadarPanel({
           </p>
         )}
 
-        {data && !loading && (
+        {data && !loading && (!data.points || data.points.length === 0) && (
+          <p className="text-xs text-amber-300 bg-amber-950/20 rounded-lg p-3">
+            Nessun dato per il periodo. Prova un intervallo più breve o aggiorna.
+          </p>
+        )}
+
+        {data && !loading && data.points?.length > 0 && (
           <>
             <p className="text-[10px] text-forest-500">
               {data.startDate} → {data.endDate} · {data.points.length} giorni ·{" "}
