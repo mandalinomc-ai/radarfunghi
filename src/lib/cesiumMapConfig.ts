@@ -1,11 +1,15 @@
 import type { Viewer } from "cesium";
 import type { CesiumRuntime } from "./loadCesium";
+import { CARTO_VOYAGER_LABELS_URL } from "./mapUtils";
 
 const ESRI_IMAGERY_URL =
   "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer";
 
-/** Qualità imagery satellitare — livelli alti fino allo zoom ravvicinato */
+const ESRI_LABELS_SERVER =
+  "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer";
+
 export const IMAGERY_MAX_LEVEL = 20;
+export const GROUND_PIN_OFFSET_M = 4;
 
 export async function createSatelliteImageryProvider(Cesium: CesiumRuntime) {
   return Cesium.ArcGisMapServerImageryProvider.fromUrl(ESRI_IMAGERY_URL, {
@@ -13,7 +17,35 @@ export async function createSatelliteImageryProvider(Cesium: CesiumRuntime) {
   });
 }
 
-/** Retina + tessellazione ad alta qualità vicino al suolo */
+/** Stesso overlay etichette della mappa 2D (città, paesi, strade) */
+export async function addMapLabelLayers(
+  viewer: Viewer,
+  Cesium: CesiumRuntime
+): Promise<void> {
+  try {
+    const esriLabels = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+      ESRI_LABELS_SERVER,
+      { maximumLevel: 19 }
+    );
+    const esriLayer = viewer.imageryLayers.addImageryProvider(esriLabels);
+    esriLayer.alpha = 0.48;
+  } catch {
+    /* optional */
+  }
+
+  try {
+    const cartoLabels = new Cesium.UrlTemplateImageryProvider({
+      url: CARTO_VOYAGER_LABELS_URL,
+      subdomains: ["a", "b", "c", "d"],
+      maximumLevel: 20,
+      credit: "© OpenStreetMap © CARTO",
+    });
+    viewer.imageryLayers.addImageryProvider(cartoLabels);
+  } catch {
+    /* optional */
+  }
+}
+
 export function configureGlobeRendering(
   viewer: Viewer,
   Cesium: CesiumRuntime,
@@ -22,64 +54,100 @@ export function configureGlobeRendering(
   const { scene } = viewer;
   const { globe } = scene;
 
-  globe.depthTestAgainstTerrain = true;
+  globe.depthTestAgainstTerrain = hasTerrain;
   globe.showGroundAtmosphere = true;
-  globe.tileCacheSize = 1200;
+  globe.tileCacheSize = 1500;
   globe.preloadAncestors = true;
   globe.preloadSiblings = true;
-  globe.loadingDescendantLimit = 80;
+  globe.loadingDescendantLimit = 120;
+  globe.enableLighting = false;
 
   scene.fog.enabled = false;
-  scene.highDynamicRange = false;
   scene.postProcessStages.fxaa.enabled = true;
 
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio : 1;
   viewer.resolutionScale = Math.min(Math.max(dpr, 1), 2.5);
   viewer.useBrowserRecommendedResolution = false;
 
-  scene.screenSpaceCameraController.enableCollisionDetection = hasTerrain;
-  scene.screenSpaceCameraController.minimumZoomDistance = 25;
-  scene.screenSpaceCameraController.maximumZoomDistance = 50_000_000;
-
-  const layer = viewer.imageryLayers.get(0);
-  if (layer) {
-    layer.minificationFilter = Cesium.TextureMinificationFilter.LINEAR;
-    layer.magnificationFilter = Cesium.TextureMagnificationFilter.LINEAR;
+  const satellite = viewer.imageryLayers.get(0);
+  if (satellite) {
+    satellite.minificationFilter = Cesium.TextureMinificationFilter.LINEAR;
+    satellite.magnificationFilter = Cesium.TextureMagnificationFilter.LINEAR;
   }
 
+  configureOrbitalCamera(viewer, Cesium, hasTerrain);
   applyGlobeQualityForCameraHeight(viewer);
 }
 
-/** SSE più basso = più dettaglio terrain/imagery quando si zoomma */
+/** Orbita 360° stile Google Earth — sopra, sotto, zoom libero */
+export function configureOrbitalCamera(
+  viewer: Viewer,
+  Cesium: CesiumRuntime,
+  _hasTerrain: boolean
+) {
+  const c = viewer.scene.screenSpaceCameraController;
+
+  c.enableRotate = true;
+  c.enableTilt = true;
+  c.enableLook = true;
+  c.enableTranslate = true;
+  c.enableZoom = true;
+  c.enableInputs = true;
+  c.enableCollisionDetection = false;
+
+  c.minimumZoomDistance = 1.5;
+  c.maximumZoomDistance = 45_000_000;
+  c.inertiaSpin = 0.92;
+  c.inertiaTranslate = 0.9;
+  c.inertiaZoom = 0.82;
+
+  c.zoomEventTypes = [
+    Cesium.CameraEventType.WHEEL,
+    Cesium.CameraEventType.PINCH,
+  ];
+  c.tiltEventTypes = [
+    Cesium.CameraEventType.MIDDLE_DRAG,
+    Cesium.CameraEventType.PINCH,
+    Cesium.CameraEventType.RIGHT_DRAG,
+  ];
+  c.rotateEventTypes = [
+    Cesium.CameraEventType.LEFT_DRAG,
+    Cesium.CameraEventType.PINCH,
+  ];
+  c.translateEventTypes = [
+    Cesium.CameraEventType.MIDDLE_DRAG,
+    Cesium.CameraEventType.PINCH,
+  ];
+}
+
 export function applyGlobeQualityForCameraHeight(viewer: Viewer): void {
   if (viewer.isDestroyed()) return;
   const height = viewer.camera.positionCartographic.height;
   const globe = viewer.scene.globe;
 
-  if (height < 250) {
-    globe.maximumScreenSpaceError = 0.5;
-  } else if (height < 800) {
-    globe.maximumScreenSpaceError = 0.66;
-  } else if (height < 2500) {
-    globe.maximumScreenSpaceError = 1.0;
-  } else if (height < 20_000) {
-    globe.maximumScreenSpaceError = 1.5;
+  if (height < 180) {
+    globe.maximumScreenSpaceError = 0.35;
+  } else if (height < 600) {
+    globe.maximumScreenSpaceError = 0.55;
+  } else if (height < 2000) {
+    globe.maximumScreenSpaceError = 0.85;
+  } else if (height < 15_000) {
+    globe.maximumScreenSpaceError = 1.25;
   } else {
     globe.maximumScreenSpaceError = 2.0;
   }
 }
 
-/** Scala pin/etichette in base alla distanza camera */
 export function markerScaleByDistance(Cesium: CesiumRuntime) {
-  return new Cesium.NearFarScalar(120, 2.4, 250_000, 0.45);
+  return new Cesium.NearFarScalar(80, 1.8, 400_000, 0.75);
 }
 
 export function labelScaleByDistance(Cesium: CesiumRuntime) {
-  return new Cesium.NearFarScalar(200, 1.35, 180_000, 0.55);
+  return new Cesium.NearFarScalar(100, 1.25, 350_000, 0.85);
 }
 
-export function groundClamp(Cesium: CesiumRuntime) {
-  return Cesium.HeightReference.CLAMP_TO_GROUND;
+export function groundPinHeightReference(Cesium: CesiumRuntime) {
+  return Cesium.HeightReference.RELATIVE_TO_GROUND;
 }
 
 export function attachQualityOnCameraMove(

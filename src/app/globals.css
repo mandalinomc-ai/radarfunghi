@@ -312,3 +312,40 @@ body {
     0 0 0 1px rgba(255, 255, 255, 0.05) inset,
     0 16px 48px rgba(0, 0, 0, 0.55);
 }
+
+/* —— App shell premium —— */
+.app-shell-dock {
+  background: linear-gradient(180deg, rgba(18, 30, 16, 0.99) 0%, rgba(10, 18, 9, 0.98) 100%);
+  border-top: 1px solid rgba(122, 184, 114, 0.16);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 -20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.app-shell-sidebar {
+  background: linear-gradient(165deg, rgba(16, 26, 14, 0.99) 0%, rgba(10, 18, 9, 0.99) 100%);
+  border-right: 1px solid rgba(122, 184, 114, 0.14);
+  box-shadow: 4px 0 40px rgba(0, 0, 0, 0.35);
+}
+
+.app-shell-section {
+  background: rgba(8, 14, 8, 0.55);
+  border: 1px solid rgba(61, 107, 56, 0.22);
+  border-radius: 1rem;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.app-dock-btn {
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.app-dock-btn:hover {
+  border-color: rgba(122, 184, 114, 0.2);
+}
+
+.app-dock-btn-accent {
+  background: linear-gradient(145deg, rgba(224, 120, 48, 0.22), rgba(196, 92, 26, 0.15));
+  border-color: rgba(245, 154, 74, 0.35);
+  box-shadow: 0 4px 16px rgba(224, 120, 48, 0.12);
+}

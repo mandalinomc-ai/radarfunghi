@@ -169,7 +169,7 @@ export default function SearchPanel({
     <>
       {/* ——— Mobile dock ——— */}
       <div className="absolute bottom-0 left-0 right-0 z-[1000] pointer-events-auto safe-bottom md:hidden">
-        <div className="bg-forest-900/98 backdrop-blur-lg border-t border-forest-600/40 shadow-[0_-12px_40px_rgba(0,0,0,0.45)] rounded-t-2xl overflow-hidden">
+        <div className="app-shell-dock rounded-t-2xl overflow-hidden">
           {!mapCompact && mobileToolbar}
 
           <div
@@ -192,10 +192,10 @@ export default function SearchPanel({
               aria-expanded={mobileExpanded}
             >
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-[10px] uppercase tracking-wider text-mushroom-400/90 font-semibold">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-mushroom-400/90 font-semibold">
                   Ricerca live
                 </p>
-                <p className="text-sm font-bold text-forest-100 truncate">
+                <p className="font-display text-base text-forest-100 truncate leading-tight">
                   {formatDateLabel(selectedDate)} · {formatHourRange(hourRange)}
                 </p>
                 <p className="text-[11px] text-forest-400 truncate">
@@ -405,13 +405,13 @@ export default function SearchPanel({
       </div>
 
       {/* ——— Desktop sidebar ——— */}
-      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-[320px] md:z-[1001] md:border-r md:border-forest-600/40 md:bg-forest-900/98 md:overflow-hidden md:pointer-events-auto">
-        <div className="shrink-0 px-4 py-3 border-b border-forest-700/40 bg-forest-950/40">
-          <h1 className="text-base font-bold text-forest-200 tracking-tight">
-            🍄 Mushroom<span className="text-mushroom-400">Radar</span>
+      <aside className="app-shell-sidebar hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-[320px] md:z-[1001] md:overflow-hidden md:pointer-events-auto">
+        <div className="shrink-0 px-5 py-4 border-b border-forest-700/30 bg-gradient-to-b from-forest-900/80 to-transparent">
+          <h1 className="font-display text-2xl text-forest-100 tracking-tight">
+            Mushroom<span className="text-mushroom-400">Radar</span>
           </h1>
-          <p className="text-[10px] text-forest-500 mt-0.5">
-            Imposta ricerca · aggiornamento live
+          <p className="text-[10px] uppercase tracking-[0.18em] text-forest-500 mt-1">
+            Intelligence fungina · live
           </p>
         </div>
 
@@ -561,8 +561,8 @@ function SearchSection({
   children: React.ReactNode;
 }) {
   return (
-    <section>
-      <h3 className="text-[10px] uppercase tracking-wider text-forest-400 font-semibold mb-2">
+    <section className="app-shell-section p-3.5 mb-3">
+      <h3 className="text-[10px] uppercase tracking-[0.18em] text-forest-400 font-semibold mb-2.5">
         {title}
       </h3>
       {children}

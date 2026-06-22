@@ -98,13 +98,13 @@ function DockBtn({
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center justify-center rounded-xl touch-manipulation active:scale-95 ${
+      className={`app-dock-btn relative flex flex-col items-center justify-center rounded-xl touch-manipulation active:scale-95 ${
         compact ? "py-2 min-h-[52px]" : "flex-1 py-2 min-h-[56px]"
       } ${
         highlight
-          ? "bg-forest-700/50"
+          ? "bg-forest-700/50 border-forest-600/40"
           : accent
-            ? "bg-mushroom-700/35"
+            ? "app-dock-btn-accent"
             : "hover:bg-forest-800/50"
       }`}
     >
