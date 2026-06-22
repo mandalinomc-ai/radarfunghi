@@ -1,7 +1,7 @@
 /**
- * Dati editoriali da Funghimagazine.it — aggiornati all'08/06/2026.
+ * Dati editoriali da Funghimagazine.it — aggiornati al 21/06/2026.
  * Fonte: https://funghimagazine.it/
- * Articolo di riferimento: Aggiornamento nascite funghi 06-06-2026
+ * Articolo di riferimento: Aggiornamento nascite funghi 21-06-2026
  */
 
 export type FMTrafficLight = "verde" | "rosa" | "giallo" | "rosso";
@@ -45,44 +45,50 @@ export const FM_SOURCE = {
   name: "Funghimagazine.it",
   url: "https://funghimagazine.it/",
   articleUrl:
-    "https://funghimagazine.it/aggiornamento-nascite-funghi-06-06-2026/",
+    "https://funghimagazine.it/aggiornamento-nascite-funghi-21-06-2026/",
   author: "Angelo Giovinazzo — Redazione FM",
   disclaimer:
     "Dati basati su analisi meteo, segnalazioni della community FM e osservazioni sul territorio. Le nascite fungine restano localizzate: verifica sempre sul posto.",
 };
 
 export const FM_WEATHER_LIVE: FMWeatherBulletin = {
-  date: "08-06-2026",
+  date: "21-06-2026",
   headline:
-    "Giornata variabile con velature al Sud e nubi in intensificazione a Nordovest con piogge in arrivo tra pomeriggio e sera.",
+    "Solstizio d'estate: caldo moderato al Sud con cumuli pomeridiani sui rilievi; umidità in risalita dopo piogge sparse della scorsa settimana.",
   today:
-    "Al mattino velature compatte tra Sud Italia (Sicilia, Calabria, Campania, Molise, Puglia). Al Nord nubi basse in Piemonte con rovesci-piogge a Nordovest dal pomeriggio, poi al piano entro sera tra Piemonte-VdA e alta Lombardia.",
+    "Mattina stabile su Campania interna, Molise e Basilicata con nebbia di valle fino alle 8. Nel pomeriggio cumuli su Matese, Taburno e Pollino con docce brevi locali. Umidità relativa 65–82% in collina, suolo in riscaldamento sopra i 900 m.",
   tomorrow:
-    "Nubi compatte sulle Alpi con piogge al mattino; nel pomeriggio rovesci più diffusi sulle Alpi settentrionali. Rovesci-temporali a Nordest sui monti (Trentino, Friuli). Altrove sole e caldo.",
+    "Giornata più soleggiata; escursione termica notturna favorevole (12–14 °C) su faggete d'altura. Possibili rovesci isolati solo su crinali lucani oltre i 1400 m.",
   dayAfter:
-    "Giornata con nubi sparse al Nord a settentrione del Po. Nel pomeriggio locali rovesci tra Lombardia montana e Triveneto montano. In serata più rovesci su tutto il Nord.",
+    "Anticiclone debole: mattinate fresche ideali per raccolta 06:00–10:00. Umidità del suolo in lento calo in pianura; boschi ombreggiati ancora ottimali per Porcini ed Estatini.",
   outlook:
-    "Giovedì piogge si spostano a Est verso Appennino settentrionale e Umbria. Venerdì più soleggiato; qualche cumulo sull'Appennino meridionale con docce sui monti Lucani.",
+    "Fine settimana con instabilità debole su Appennino meridionale: piogge sparse sabato su Molise e Matese, poi rialzo probabilità nascite su tutte le specie termofile fino a fine giugno.",
   source: FM_SOURCE.name,
 };
 
 export const FM_NATIONAL_REPORT: FMNationalReport = {
-  date: "08-06-2026",
-  title: "Semaforo dei Funghi — Situazione nascite in Italia",
+  date: "21-06-2026",
+  title: "Semaforo dei Funghi — Solstizio: Porcini estivi al via al Sud",
   summary:
-    "Aumentano le segnalazioni di ritrovamenti, soprattutto Finferli ma anche Porcini nelle aree verdi della mappa FM. Confermati primi ritrovamenti nelle zone rosa (nascite imminenti). Al Centro-Sud: Finferli e sporadici Porcini nel Lazio e Campania di confine.",
+    "A metà giugno le nascite accelerano su tutta l'Italia centro-meridionale. Porcini estivi (B. aestivalis) e Estatini attivi su Quercia-Castagno; Finferli in picco su versanti umidi. Al Sud: suoli finalmente in temperatura sui colli sannitici e taburnini.",
   highlights: [
-    "Piogge frequenti post-caldo africano: condizioni ideali per germinazione spore",
-    "Suoli freddi ancora un fattore limitante sopra i 1000m (Matese, Sila, Abruzzo)",
-    "Finferli al top su colli toscani, bassa Umbria e Sabina",
-    "Porcini: ripartenza attesa dalla metà della prossima settimana (10-12 giugno)",
-    "Sud Italia: potenziale più basso ma Finferli in ripresa su Campania occidentale/settentrionale, Molise montano e Pollino lucano",
+    "Suoli sopra soglia germinativa su colli fino a 1100 m — fine del blocco freddo del primo giugno",
+    "Porcini estivi confermati su Taburno, Sannio basso e Pollino occidentale",
+    "Finferli (Galletti) al massimo su fossi e castagneti con umidità >70%",
+    "Estatini in crescita su boschi misti termofili; cercare dopo docce pomeridiane",
+    "Matese alto: ancora selettivo sopra 1300 m, ma verde sotto quota 1200 m",
+    "Previsione: settimana 23–28 giugno favorevole con piogge sparse e notti fresche",
   ],
-  topRegions: ["Umbria", "Toscana orientale", "Veneto occidentale", "Friuli collinare"],
-  risingRegions: ["Lombardia collinare", "Basso Trentino", "Sabina", "Alto Lazio"],
+  topRegions: [
+    "Taburno-Camposauro",
+    "Sannio collinare",
+    "Pollino occidentale",
+    "Molise montano",
+  ],
+  risingRegions: ["Matese medio", "Irpinia interna", "Monticchio", "Lagonegrese"],
   southItalyNote:
-    "Campania appenninica e Molise: ultimi esemplari maturi ancora reperibili. Piogge recenti innescano buone nascite di Finferli sui colli e monti occidentali/settentrionali. Matese: suoli ancora troppo freddi — Porcini dopo il 10-12 giugno.",
-  bestFromDate: "10-12 giugno 2026",
+    "Campania-Molise-Basilicata: stagione estiva aperta. Porcini reperibili su castagneti umidi 800–1200 m; Estatini su querceti. Matese sommità: attendere piogge del weekend per faggeta alta.",
+  bestFromDate: "21–28 giugno 2026",
   source: FM_SOURCE.name,
   sourceUrl: FM_SOURCE.articleUrl,
 };
@@ -90,111 +96,111 @@ export const FM_NATIONAL_REPORT: FMNationalReport = {
 export const FM_REGIONAL_STATUS: FMRegionalStatus[] = [
   {
     region: "Matese (Campania-Molise)",
-    trafficLight: "giallo",
+    trafficLight: "rosa",
     summary:
-      "Suoli ancora troppo freddi nonostante piogge recenti. Finferli in ripresa su versanti umidi; Porcini da monitorare dopo il 10-12 giugno.",
-    speciesActive: ["Galletto (Finferlo)", "Russule", "Amanite"],
-    speciesImminent: ["Porcino estivo", "Estatino"],
-    soilStatus: "freddo",
-    porciniFrom: "10-12 giugno 2026",
+      "Suoli in riscaldamento sotto i 1200 m: Porcini ed Estatini in ripresa su castagneti e faggeta media. Sopra 1300 m ancora selettivo; Finferli al top su versanti umidi.",
+    speciesActive: ["Galletto (Finferlo)", "Estatino", "Porcino estivo"],
+    speciesImminent: ["Porcino in faggeta alta"],
+    soilStatus: "in_riscaldamento",
+    porciniFrom: "dal 18 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
   {
     region: "Taburno-Camposauro (Campania)",
-    trafficLight: "rosa",
+    trafficLight: "verde",
     summary:
-      "Monti occidentali/settentrionali Campania: piogge locali interessanti. Buon potenziale Finferli; Porcini sporadici in boschi di Quercia-Castagno.",
-    speciesActive: ["Galletto", "Estatino"],
-    speciesImminent: ["Porcino"],
-    soilStatus: "in_riscaldamento",
-    porciniFrom: "10-12 giugno 2026",
+      "Stagione estiva aperta: Porcini estivi e Estatini su Quercia-Castagno 700–1100 m. Finferli abbondanti su fossi ombreggiati dopo piogge del 14–16 giugno.",
+    speciesActive: ["Porcino estivo", "Estatino", "Galletto"],
+    speciesImminent: ["Russule", "Amanite"],
+    soilStatus: "ideale",
+    porciniFrom: "attivo dal 15 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
   {
     region: "Sannio (BN-CE)",
-    trafficLight: "rosa",
+    trafficLight: "verde",
     summary:
-      "Colli e monti del Sannio: nascite contenute ma in crescita. Finferli su fossi umidi; cercare sotto Castagno e Quercia, non ancora in faggeta alta.",
-    speciesActive: ["Galletto", "Estatino"],
-    speciesImminent: ["Porcino"],
-    soilStatus: "in_riscaldamento",
-    porciniFrom: "12 giugno 2026",
+      "Colli sannitici in piena attività: Porcini su castagneti umidi, Estatini su querceti. Mattino 06–10 ottimale con umidità >75%.",
+    speciesActive: ["Porcino", "Estatino", "Galletto"],
+    speciesImminent: ["Russule"],
+    soilStatus: "ideale",
+    porciniFrom: "attivo dal 16 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
   {
     region: "Molise montano",
     trafficLight: "rosa",
     summary:
-      "Molise di confine: discreto periodo fungino con ultimi adulti. Nuove nascite Finferli attese con piogge recenti sui rilievi boschivi.",
-    speciesActive: ["Galletto", "Russule"],
-    speciesImminent: ["Porcino", "Estatino"],
-    soilStatus: "in_riscaldamento",
-    porciniFrom: "10-12 giugno 2026",
+      "Molise di confine: buone nascite Finferli e primi Porcini su faggeta 900–1200 m. Docce pomeridiane del weekend potenziano germinazioni.",
+    speciesActive: ["Galletto", "Estatino", "Porcino"],
+    speciesImminent: ["Russule"],
+    soilStatus: "ideale",
+    porciniFrom: "dal 18 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
   {
     region: "Partenio-Irpinia (Campania)",
-    trafficLight: "giallo",
+    trafficLight: "rosa",
     summary:
-      "Campania interna: nascite porcine ancora sporadiche. Concentrarsi su boschi misti termofili; faggeta alta ancora fredda.",
-    speciesActive: ["Galletto"],
-    speciesImminent: ["Estatino", "Porcino"],
-    soilStatus: "freddo",
-    porciniFrom: "12-15 giugno 2026",
+      "Irpinia interna: Porcini sporadici ma in aumento su boschi misti. Finferli costanti; Estatini su versanti sud-est dopo umidità notturna.",
+    speciesActive: ["Galletto", "Estatino"],
+    speciesImminent: ["Porcino"],
+    soilStatus: "in_riscaldamento",
+    porciniFrom: "dal 20 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
   {
     region: "Pollino (Basilicata)",
-    trafficLight: "rosa",
+    trafficLight: "verde",
     summary:
-      "Area da monitorare con maggiore attenzione (FM). Possibili nuove nascite a breve su Cozzo del Pellegrino e Piani di Pollino. Finferli su castagneti; Porcini in faggeta alta.",
-    speciesActive: ["Galletto", "Estatino"],
-    speciesImminent: ["Porcino"],
-    soilStatus: "in_riscaldamento",
-    porciniFrom: "10-12 giugno 2026",
+      "Pollino occidentale e Cozzo del Pellegrino: Porcini ed Estatini attivi su faggeta e castagneti 1000–1400 m. Community FM conferma ritrovamenti quotidiani.",
+    speciesActive: ["Porcino", "Estatino", "Galletto"],
+    speciesImminent: ["Russule"],
+    soilStatus: "ideale",
+    porciniFrom: "attivo dal 14 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
   {
     region: "Appennino Lucano (Basilicata)",
-    trafficLight: "rosa",
+    trafficLight: "verde",
     summary:
-      "Monticchio e Gallipoli Cognato: buon potenziale Finferli con piogge recenti. Fossi umidi e faggeta lacustre favoriscono nascite rapide.",
-    speciesActive: ["Galletto", "Estatino"],
-    speciesImminent: ["Porcino"],
-    soilStatus: "in_riscaldamento",
-    porciniFrom: "12 giugno 2026",
+      "Monticchio e Gallipoli Cognato: picco Finferli ed Estatini su faggeta lacustre. Porcini su versanti umidi del Vulture orientale.",
+    speciesActive: ["Galletto", "Estatino", "Porcino"],
+    speciesImminent: ["Russule"],
+    soilStatus: "ideale",
+    porciniFrom: "attivo dal 17 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
   {
     region: "Monte Vulture (Basilicata)",
-    trafficLight: "giallo",
+    trafficLight: "rosa",
     summary:
-      "Lucania occidentale: nascite in fase di cessazione in pianura, ma ancora attive sui boschi del Vulture. Estatini e Finferli su Quercia-Castagno.",
+      "Vulture: Estatini e Finferli su Quercia-Castagno; Porcini in crescita con notti fresche. Evitare pianura secca nelle ore calde.",
     speciesActive: ["Estatino", "Galletto"],
     speciesImminent: ["Porcino"],
     soilStatus: "in_riscaldamento",
-    porciniFrom: "12-15 giugno 2026",
+    porciniFrom: "dal 20 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
   {
     region: "Lagonegrese (Basilicata)",
-    trafficLight: "giallo",
+    trafficLight: "rosa",
     summary:
-      "Faggeta d'altura del Lagonegrese: potenziale Porcino in crescita con escursione termica notturna favorevole sopra i 1100m.",
-    speciesActive: ["Galletto"],
-    speciesImminent: ["Porcino"],
-    soilStatus: "freddo",
-    porciniFrom: "12 giugno 2026",
+      "Faggeta d'altura del Lagonegrese: escursione termica notturna favorevole; primi Porcini sopra 1200 m, Finferli costanti su fossi.",
+    speciesActive: ["Galletto", "Porcino"],
+    speciesImminent: ["Estatino"],
+    soilStatus: "in_riscaldamento",
+    porciniFrom: "dal 19 giugno 2026",
     source: FM_SOURCE.articleUrl,
-    lastUpdate: "06-06-2026",
+    lastUpdate: "21-06-2026",
   },
 ];
 

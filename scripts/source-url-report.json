@@ -1,0 +1,470 @@
+{
+  "checkedAt": "2026-06-22T00:57:54.684Z",
+  "ok": [
+    {
+      "id": "legge-352-93",
+      "shortName": "Legge 352/93",
+      "url": "https://www.gazzettaufficiale.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.gazzettaufficiale.it/",
+      "method": "http"
+    },
+    {
+      "id": "dpr-376-95",
+      "shortName": "DPR 376/95",
+      "url": "https://www.gazzettaufficiale.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.gazzettaufficiale.it/",
+      "method": "http"
+    },
+    {
+      "id": "campania-lr-funghi",
+      "shortName": "Campania L.R. 8/2007",
+      "url": "https://funghietartufi.regione.campania.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://funghietartufi.regione.campania.it/",
+      "method": "http"
+    },
+    {
+      "id": "ministero-salute",
+      "shortName": "Min. Salute",
+      "url": "https://www.salute.gov.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.salute.gov.it/",
+      "method": "http"
+    },
+    {
+      "id": "iss",
+      "shortName": "ISS",
+      "url": "https://www.iss.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.iss.it/",
+      "method": "http"
+    },
+    {
+      "id": "asl-benevento",
+      "shortName": "ASL Benevento",
+      "url": "https://www.aslbenevento.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.aslbenevento.it/",
+      "method": "http"
+    },
+    {
+      "id": "asl-caserta",
+      "shortName": "ASL Caserta",
+      "url": "https://www.aslcaserta.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.aslcaserta.it/",
+      "method": "http"
+    },
+    {
+      "id": "asp-basilicata",
+      "shortName": "ASP Basilicata",
+      "url": "https://www.aspbasilicata.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.aspbasilicata.it/",
+      "method": "http"
+    },
+    {
+      "id": "asrem-molise",
+      "shortName": "ASReM",
+      "url": "https://www.asrem.molise.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.asrem.molise.it/",
+      "method": "http"
+    },
+    {
+      "id": "regione-molise",
+      "shortName": "Regione Molise",
+      "url": "https://www.regione.molise.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.regione.molise.it/flex/cm/pages/ServeBLOB.php/L/IT/IDPagina/1",
+      "method": "http"
+    },
+    {
+      "id": "regione-basilicata",
+      "shortName": "Regione Basilicata",
+      "url": "https://www.regione.basilicata.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.regione.basilicata.it/",
+      "method": "http"
+    },
+    {
+      "id": "regione-campania",
+      "shortName": "Regione Campania",
+      "url": "https://www.regione.campania.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.regione.campania.it/",
+      "method": "http"
+    },
+    {
+      "id": "ispra",
+      "shortName": "ISPRA",
+      "url": "https://www.isprambiente.gov.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.isprambiente.gov.it/it",
+      "method": "http"
+    },
+    {
+      "id": "arpa-campania",
+      "shortName": "ARPA Campania",
+      "url": "https://www.arpacampania.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.arpacampania.it/",
+      "method": "http"
+    },
+    {
+      "id": "arpa-molise",
+      "shortName": "ARPA Molise",
+      "url": "https://www.arpamolise.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.arpamolise.it/",
+      "method": "http"
+    },
+    {
+      "id": "arpa-basilicata",
+      "shortName": "ARPA Basilicata",
+      "url": "https://www.arpab.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.arpab.it/",
+      "method": "http"
+    },
+    {
+      "id": "crea",
+      "shortName": "CREA",
+      "url": "https://www.crea.gov.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.crea.gov.it/",
+      "method": "http"
+    },
+    {
+      "id": "igm",
+      "shortName": "IGM",
+      "url": "https://www.igmi.org/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.igmi.org/",
+      "method": "http"
+    },
+    {
+      "id": "dpc",
+      "shortName": "Protezione Civile",
+      "url": "https://www.protezionecivile.gov.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.protezionecivile.gov.it/",
+      "method": "http"
+    },
+    {
+      "id": "meteo-am",
+      "shortName": "Meteo AM",
+      "url": "https://www.meteoam.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.meteoam.it/it/home",
+      "method": "http"
+    },
+    {
+      "id": "open-meteo",
+      "shortName": "Open-Meteo",
+      "url": "https://open-meteo.com/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://open-meteo.com/",
+      "method": "http"
+    },
+    {
+      "id": "ecmwf",
+      "shortName": "ECMWF",
+      "url": "https://www.ecmwf.int/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.ecmwf.int/",
+      "method": "http"
+    },
+    {
+      "id": "parco-taburno",
+      "shortName": "Parco Taburno",
+      "url": "https://enteparcotaburnocamposauro.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://enteparcotaburnocamposauro.it/",
+      "method": "http"
+    },
+    {
+      "id": "cm-taburno",
+      "shortName": "CM Taburno",
+      "url": "https://comunitamontanataburno.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://comunitamontanataburno.it/",
+      "method": "http"
+    },
+    {
+      "id": "parco-matese",
+      "shortName": "Parco Matese",
+      "url": "https://www.parcomatese.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://parcomatese.it/",
+      "method": "http"
+    },
+    {
+      "id": "parco-pollino",
+      "shortName": "Parco Pollino",
+      "url": "https://www.parcopollino.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.parcopollino.it/",
+      "method": "http"
+    },
+    {
+      "id": "parco-cilento",
+      "shortName": "Parco Cilento",
+      "url": "https://www.cilentoediano.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.cilentoediano.it/",
+      "method": "http"
+    },
+    {
+      "id": "parco-gargano",
+      "shortName": "Parco Gargano",
+      "url": "https://www.parcogargano.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.parcogargano.it/",
+      "method": "http"
+    },
+    {
+      "id": "parco-abruzzo",
+      "shortName": "PNALM",
+      "url": "https://www.parcoabruzzo.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.parcoabruzzo.it/",
+      "method": "http"
+    },
+    {
+      "id": "amb",
+      "shortName": "AMB",
+      "url": "https://www.ambbresadola.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://ambbresadola.it/",
+      "method": "http"
+    },
+    {
+      "id": "umi",
+      "shortName": "UMI",
+      "url": "https://www.unionemicologicaitaliana-aps.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.unionemicologicaitaliana-aps.it/",
+      "method": "http"
+    },
+    {
+      "id": "uni-napoli",
+      "shortName": "UniNA",
+      "url": "https://www.unina.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.unina.it/it/",
+      "method": "http"
+    },
+    {
+      "id": "uni-molise",
+      "shortName": "UniMol",
+      "url": "https://www.unimol.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www3.unimol.it/",
+      "method": "http"
+    },
+    {
+      "id": "uni-basilicata",
+      "shortName": "UniBas",
+      "url": "https://www.unibas.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://portale.unibas.it/site/home.html",
+      "method": "http"
+    },
+    {
+      "id": "funghimagazine",
+      "shortName": "Funghimagazine",
+      "url": "https://funghimagazine.it/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://funghimagazine.it/",
+      "method": "http"
+    },
+    {
+      "id": "fm-tabelle",
+      "shortName": "FM Tabelle",
+      "url": "https://funghimagazine.it/tabelle-nascite-funghi/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://funghimagazine.it/tabelle-nascite-funghi/",
+      "method": "http"
+    },
+    {
+      "id": "fm-estatino",
+      "shortName": "FM Estatino",
+      "url": "https://funghimagazine.it/boletus-reticulatus-o-aestivalis-porcino-estatino/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://funghimagazine.it/boletus-reticulatus-o-aestivalis-porcino-estatino/",
+      "method": "http"
+    },
+    {
+      "id": "fm-calendario",
+      "shortName": "FM Calendario",
+      "url": "https://funghimagazine.it/fm-calendario-porcini-primavera-estate/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://funghimagazine.it/fm-calendario-porcini-primavera-estate/",
+      "method": "http"
+    },
+    {
+      "id": "efsa",
+      "shortName": "EFSA",
+      "url": "https://www.efsa.europa.eu/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.efsa.europa.eu/en",
+      "method": "http"
+    },
+    {
+      "id": "index-fungorum",
+      "shortName": "Index Fungorum",
+      "url": "https://www.indexfungorum.org/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.indexfungorum.org/",
+      "method": "http"
+    },
+    {
+      "id": "mycobank",
+      "shortName": "MycoBank",
+      "url": "https://mycobank.org/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.mycobank.org/",
+      "method": "http"
+    },
+    {
+      "id": "nominatim",
+      "shortName": "Nominatim",
+      "url": "https://nominatim.openstreetmap.org/",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://nominatim.openstreetmap.org/ui/search.html",
+      "method": "http"
+    },
+    {
+      "id": "yt-calamini-giugno-2026",
+      "shortName": "YT Calamini Giugno 2026",
+      "url": "https://www.youtube.com/watch?v=m1rqIqJdsQM",
+      "ok": true,
+      "title": "FUNGHI PORCINI GIUGNO 2026 - LA RISCOSSA DEL CASTAGNO! #funghi #mushroom #fungi #nature #food #perte",
+      "author": "Alessandro Calamini - Passione Funghi 🍄",
+      "authorUrl": "https://www.youtube.com/@alessandrocalamini",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-corbara-porcini-sannita-2022",
+      "shortName": "YT Corbara Sannita 2022",
+      "url": "https://www.youtube.com/watch?v=4itOIP40OqQ",
+      "ok": true,
+      "title": "PORCINI 2022 ESPLOSIONE DI FUNGHI PORCINI IN FAGGETA 1400 MT APPENNINO SANNITA",
+      "author": "luca Corbara",
+      "authorUrl": "https://www.youtube.com/@lucacorbarafunghi",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-corbara-porcini-sett-2022",
+      "shortName": "YT Corbara Sett 2022",
+      "url": "https://www.youtube.com/watch?v=uhTCXQXSEMk",
+      "ok": true,
+      "title": "Porcini settembre 2022.Le faggete del Sannio esplodono! Mamma che funghi! Dal bosco al ristorante.",
+      "author": "luca Corbara",
+      "authorUrl": "https://www.youtube.com/@lucacorbarafunghi",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-oppicelli-porcini-giugno",
+      "shortName": "YT Oppicelli Giugno",
+      "url": "https://www.youtube.com/watch?v=5D6-1C6JRaQ",
+      "ok": true,
+      "title": "Porcini a giugno in Appennino: fra fossi e ripari",
+      "author": "Nicolo Oppicelli - Passione Funghi",
+      "authorUrl": "https://www.youtube.com/@nicolo.oppicelli",
+      "method": "youtube-oembed"
+    },
+    {
+      "id": "yt-channel-calamini",
+      "shortName": "YT @alessandrocalamini",
+      "url": "https://www.youtube.com/@alessandrocalamini",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/@alessandrocalamini?cbrd=1&ucbcb=1",
+      "method": "http"
+    },
+    {
+      "id": "yt-channel-corbara",
+      "shortName": "YT @lucacorbarafunghi",
+      "url": "https://www.youtube.com/@lucacorbarafunghi",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/@lucacorbarafunghi?cbrd=1&ucbcb=1",
+      "method": "http"
+    },
+    {
+      "id": "yt-channel-oppicelli",
+      "shortName": "YT @nicolo.oppicelli",
+      "url": "https://www.youtube.com/@nicolo.oppicelli",
+      "ok": true,
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/@nicolo.oppicelli?cbrd=1&ucbcb=1",
+      "method": "http"
+    }
+  ],
+  "broken": [
+    {
+      "id": "iss-cav",
+      "shortName": "ISS CAV",
+      "url": "https://www.iss.it/web/iss-it/servizi/centri-antiveleni",
+      "ok": false,
+      "status": 404,
+      "finalUrl": "https://www.iss.it/web/iss-it/servizi/centri-antiveleni",
+      "method": "http"
+    },
+    {
+      "id": "cnr",
+      "shortName": "CNR",
+      "url": "https://www.cnr.it/",
+      "ok": false,
+      "status": 0,
+      "error": "fetch failed",
+      "method": "http"
+    }
+  ]
+}

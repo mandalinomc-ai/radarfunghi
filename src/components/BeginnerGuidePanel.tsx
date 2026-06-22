@@ -6,6 +6,7 @@ import {
   FM_TRAFFIC_LIGHT_LABELS,
 } from "@/lib/funghimagazineData";
 import { getSpeciesGuideText } from "@/lib/beginnerGuide";
+import { formatDateLabel, todayISO } from "@/lib/dateUtils";
 import type { MushroomSpecies } from "@/lib/types";
 
 interface BeginnerGuidePanelProps {
@@ -15,6 +16,49 @@ interface BeginnerGuidePanelProps {
   onGenerate: () => void;
   isLoading: boolean;
   hasDetailOpen?: boolean;
+  originReady?: boolean;
+  selectedDate?: string;
+  className?: string;
+}
+
+function EmptyGuideMessage({
+  selectedDate,
+  onClose,
+}: {
+  selectedDate: string;
+  onClose: () => void;
+}) {
+  const dayLabel = formatDateLabel(selectedDate);
+  return (
+    <div
+      className="fixed inset-0 z-[1004] pointer-events-auto flex items-center justify-center bg-forest-950/80 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-forest-900 border border-forest-600 rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-4xl mb-4">😔</p>
+        <h2 className="text-xl font-bold text-forest-200 mb-2">
+          Nessuna zona consigliata
+        </h2>
+        <p className="text-sm text-forest-400 mb-6 leading-relaxed">
+          Per <strong className="text-forest-300">{dayLabel}</strong> non ci sono
+          zone con probabilità sufficiente entro il raggio dalla tua partenza.
+          Prova ad allargare il raggio, selezionare &quot;Tutte&quot; le
+          probabilità, cambiare giorno/orario o verifica di aver impostato la
+          partenza corretta.
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full px-6 py-3 rounded-xl bg-mushroom-500 hover:bg-mushroom-400 text-white font-semibold touch-manipulation"
+        >
+          Chiudi
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function BeginnerGuidePanel({
@@ -24,22 +68,16 @@ export default function BeginnerGuidePanel({
   onGenerate,
   isLoading,
   hasDetailOpen,
+  originReady = true,
+  selectedDate = todayISO(),
+  className = "bottom-[278px] md:bottom-[255px]",
 }: BeginnerGuidePanelProps) {
-  if (!isOpen && !isLoading && !hasDetailOpen) {
+  if (!isOpen && !isLoading && !hasDetailOpen && originReady) {
     return (
       <button
         onClick={onGenerate}
         disabled={isLoading}
-        className="absolute bottom-[200px] md:bottom-[140px] left-3 right-3 md:left-1/2 md:right-auto md:-translate-x-1/2 z-[1001] pointer-events-auto
-          px-4 py-3.5 md:px-8 md:py-4 rounded-2xl
-          bg-gradient-to-r from-mushroom-500 via-mushroom-400 to-mushroom-500
-          hover:from-mushroom-400 hover:via-mushroom-300 hover:to-mushroom-400
-          text-white font-bold text-sm md:text-base tracking-wide text-center
-          shadow-[0_0_30px_rgba(228,120,48,0.4)]
-          border-2 border-mushroom-300/50
-          transition-all transform active:scale-95
-          disabled:opacity-60 disabled:cursor-wait
-          animate-pulse md:hover:animate-none touch-manipulation"
+        className={`md:hidden absolute ${className} left-1/2 -translate-x-1/2 z-[1001] pointer-events-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-mushroom-500 via-mushroom-400 to-mushroom-500 hover:from-mushroom-400 hover:via-mushroom-300 hover:to-mushroom-400 text-white font-bold text-base tracking-wide text-center shadow-[0_0_30px_rgba(228,120,48,0.4)] border-2 border-mushroom-300/50 transition-all disabled:opacity-60 disabled:cursor-wait touch-manipulation`}
       >
         {isLoading ? (
           "⏳ Preparo la guida..."
@@ -50,12 +88,18 @@ export default function BeginnerGuidePanel({
     );
   }
 
-  if (isLoading || (!roadmap && isOpen)) {
+  if (!isOpen) {
+    return null;
+  }
+
+  if (isLoading) {
     return (
-      <div className="absolute inset-0 z-[1002] pointer-events-auto flex items-center justify-center bg-forest-950/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[1004] pointer-events-auto flex items-center justify-center bg-forest-950/80 backdrop-blur-sm">
         <div className="bg-forest-900 border border-forest-600 rounded-2xl p-8 max-w-md text-center shadow-2xl">
           <div className="w-12 h-12 border-3 border-mushroom-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-forest-300">Sto analizzando meteo, zone e dati Funghimagazine...</p>
+          <p className="text-sm text-forest-300">
+            Sto analizzando meteo live, zone e dati regionali...
+          </p>
         </div>
       </div>
     );
@@ -63,31 +107,19 @@ export default function BeginnerGuidePanel({
 
   if (!roadmap) {
     return (
-      <div className="absolute inset-0 z-[1002] pointer-events-auto flex items-center justify-center bg-forest-950/80 backdrop-blur-sm">
-        <div className="bg-forest-900 border border-forest-600 rounded-2xl p-8 max-w-md text-center shadow-2xl">
-          <p className="text-4xl mb-4">😔</p>
-          <h2 className="text-xl font-bold text-forest-200 mb-2">
-            Nessuna zona consigliata
-          </h2>
-          <p className="text-sm text-forest-400 mb-6">
-            Per il giorno e l&apos;ora selezionati non ci sono zone con
-            probabilità sufficiente. Prova &quot;Domani alle 06:00&quot; o
-            attendi il 10-12 giugno per i Porcini (dice Funghimagazine).
-          </p>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 rounded-lg bg-forest-700 text-forest-200 hover:bg-forest-600"
-          >
-            Chiudi
-          </button>
-        </div>
-      </div>
+      <EmptyGuideMessage selectedDate={selectedDate} onClose={onClose} />
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[1004] pointer-events-auto flex items-end md:items-center justify-center bg-forest-950/70 backdrop-blur-sm p-0 md:p-4 safe-top">
-      <div className="bg-forest-900 border border-mushroom-500/30 rounded-t-2xl md:rounded-2xl w-full max-w-2xl max-h-[92dvh] md:max-h-[85vh] overflow-y-auto shadow-2xl safe-bottom">
+    <div
+      className="fixed inset-0 z-[1004] pointer-events-auto flex items-end md:items-center justify-center bg-forest-950/70 backdrop-blur-sm p-0 md:p-4 safe-top"
+      onClick={onClose}
+    >
+      <div
+        className="bg-forest-900 border border-mushroom-500/30 rounded-t-2xl md:rounded-2xl w-full max-w-2xl max-h-[92dvh] md:max-h-[85vh] overflow-y-auto shadow-2xl safe-bottom"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sticky top-0 bg-forest-900/95 backdrop-blur-lg border-b border-forest-700/40 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-mushroom-400">
@@ -98,8 +130,9 @@ export default function BeginnerGuidePanel({
             </h2>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-lg bg-forest-800 hover:bg-forest-700 text-forest-300 flex items-center justify-center"
+            className="w-9 h-9 rounded-lg bg-forest-800 hover:bg-forest-700 text-forest-300 flex items-center justify-center touch-manipulation"
           >
             ✕
           </button>
@@ -228,21 +261,6 @@ export default function BeginnerGuidePanel({
                 </li>
               ))}
             </ul>
-          </div>
-
-          <div className="bg-forest-950/40 rounded-lg p-3 border border-forest-700/20">
-            <p className="text-[10px] text-forest-500">
-              Dati meteo e nascite da{" "}
-              <a
-                href={roadmap.fmSourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-mushroom-400 underline"
-              >
-                {roadmap.fmSource}
-              </a>{" "}
-              — {roadmap.weatherNote}
-            </p>
           </div>
 
           <a

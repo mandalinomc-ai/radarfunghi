@@ -1,0 +1,11 @@
+{
+  "name": "MushroomRadar",
+  "short_name": "MushroomRadar",
+  "description": "Sprout Score e zone fungine nel Sud Italia",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1209",
+  "theme_color": "#0a1209",
+  "orientation": "portrait-primary",
+  "lang": "it"
+}

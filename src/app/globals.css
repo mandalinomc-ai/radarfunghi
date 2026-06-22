@@ -9,6 +9,67 @@
   --foreground: #7ab872;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-dock: 104px;
+  --mobile-toolbar: 56px;
+  --mobile-handle: 48px;
+  --mobile-top: 96px;
+  --desktop-sidebar: 320px;
+  --desktop-rail: 56px;
+  --desktop-topbar: 72px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --desktop-sidebar: 320px;
+    --desktop-rail: 56px;
+    --desktop-topbar: 72px;
+  }
+}
+
+@keyframes fab-hint {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateY(-2px);
+  }
+}
+
+.mastro-chat-fab:focus-visible {
+  outline: 2px solid #25d366;
+  outline-offset: 3px;
+}
+
+.map-preview-card {
+  background: rgba(12, 22, 11, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(90, 140, 82, 0.45);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --mobile-dock: 104px;
+    --mobile-toolbar: 56px;
+    --mobile-handle: 48px;
+    --mobile-top: 96px;
+  }
 }
 
 html,
@@ -45,6 +106,17 @@ body {
   touch-action: none;
 }
 
+/* Etichette città/paesi più leggibili su satellite */
+.leaflet-tile-pane .map-labels-places {
+  filter: contrast(1.08) brightness(1.05);
+  mix-blend-mode: normal;
+}
+
+.leaflet-tile-pane .map-labels-boundaries {
+  mix-blend-mode: screen;
+  opacity: 0.42;
+}
+
 .leaflet-control-zoom {
   border: none !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
@@ -54,7 +126,7 @@ body {
 @media (max-width: 767px) {
   .leaflet-control-zoom {
     margin-left: 8px !important;
-    margin-bottom: calc(4px + var(--safe-bottom)) !important;
+    margin-bottom: calc(var(--mobile-dock, 156px) + 8px) !important;
   }
 
   .leaflet-control-zoom a {

@@ -19,29 +19,60 @@ import {
 } from "@/lib/funghimagazineData";
 import { estimateYields } from "@/lib/beginnerGuide";
 import { getRegionLabel } from "@/lib/regionLabels";
-import { formatDriveFromBenevento } from "@/lib/benevento";
+import { formatDriveFromOrigin } from "@/lib/geoUtils";
+import type { HourRange } from "@/lib/timeRange";
+import type { ServiceTier } from "@/lib/tierUtils";
+import {
+  displayCoordinatesForTier,
+  isPremiumTier,
+} from "@/lib/tierUtils";
+import ZoneEnvironmentAlerts from "./ZoneEnvironmentAlerts";
+import SoilFruitingSection from "./SoilFruitingSection";
+import HealthSafetyBanner from "./HealthSafetyBanner";
+import MycologyKnowledgeSections from "./MycologyKnowledgeSections";
+import CompassMiniStrip from "./CompassMiniStrip";
+import TerritoryGuideSection from "./TerritoryGuideSection";
+import type { GeoPoint } from "@/lib/geoUtils";
 
 interface LocationDetailPanelProps {
   hotspot: MapHotspot | null;
-  currentHour: number;
-  dayOffset: number;
+  hourRange: HourRange;
+  selectedDate: string;
+  originName: string;
+  origin: GeoPoint;
+  tier?: ServiceTier;
   onClose: () => void;
+  onOpenCompassGuide?: (tab?: "compass" | "territory") => void;
+  className?: string;
 }
 
 export default function LocationDetailPanel({
   hotspot,
-  currentHour,
-  dayOffset,
+  hourRange,
+  selectedDate,
+  originName,
+  origin,
+  tier = "free",
   onClose,
+  onOpenCompassGuide,
+  className = "bottom-[210px] md:bottom-[195px]",
 }: LocationDetailPanelProps) {
   if (!hotspot) return null;
 
   const { zone, predictions, activeScore, activeSpecies } = hotspot;
   const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
-  const yields = estimateYields(hotspot, dayOffset);
-  const mapsLink = getGoogleMapsDeepLink(
+  const yields = estimateYields(hotspot, selectedDate);
+  const coords = displayCoordinatesForTier(
+    tier,
     zone.lat,
     zone.lng,
+    zone.id,
+    zone.parkingLat,
+    zone.parkingLng
+  );
+  const mapsLink = getGoogleMapsDeepLink(
+    isPremiumTier(tier) ? zone.lat : zone.parkingLat,
+    isPremiumTier(tier) ? zone.lng : zone.parkingLng,
     zone.parkingLat,
     zone.parkingLng
   );
@@ -49,7 +80,7 @@ export default function LocationDetailPanel({
   return (
     <>
       {/* Mobile: bottom sheet */}
-      <div className="md:hidden fixed inset-x-0 bottom-[132px] z-[1002] pointer-events-auto safe-bottom">
+      <div className={`md:hidden fixed inset-x-0 ${className} z-[1002] pointer-events-auto safe-bottom`}>
         <div className="mx-2 max-h-[58dvh] bg-forest-900/98 backdrop-blur-lg border border-forest-600/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
           <PanelHeader zone={zone} onClose={onClose} compact />
           <div className="overflow-y-auto overscroll-contain p-4 space-y-4">
@@ -60,16 +91,48 @@ export default function LocationDetailPanel({
               fmStatus={fmStatus}
               yields={yields}
               predictions={predictions}
-              currentHour={currentHour}
+              hourRange={hourRange}
+              originName={originName}
               mapsLink={mapsLink}
+              coordsLabel={coords.label}
+              selectedDate={selectedDate}
+              tier={tier}
+              origin={origin}
+              onOpenCompassGuide={onOpenCompassGuide}
               compact
             />
           </div>
         </div>
       </div>
 
-      {/* Desktop: side panel */}
-      <div className="hidden md:block absolute top-0 right-0 bottom-0 z-[1001] w-full max-w-md pointer-events-auto">
+      {/* Desktop overlay 768–1279px — area mappa tra sidebar e action rail */}
+      <div className="hidden md:block xl:hidden fixed top-[80px] bottom-4 left-[336px] right-14 z-[1002] pointer-events-none">
+        <div className="pointer-events-auto max-h-full bg-forest-900/98 backdrop-blur-lg border border-forest-600/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+          <PanelHeader zone={zone} onClose={onClose} compact />
+          <div className="overflow-y-auto overscroll-contain p-4 space-y-4">
+            <PanelBody
+              activeScore={activeScore}
+              activeSpecies={activeSpecies}
+              zone={zone}
+              fmStatus={fmStatus}
+              yields={yields}
+              predictions={predictions}
+              hourRange={hourRange}
+              originName={originName}
+              mapsLink={mapsLink}
+              coordsLabel={coords.label}
+              selectedDate={selectedDate}
+              tier={tier}
+              origin={origin}
+              onOpenCompassGuide={onOpenCompassGuide}
+              compact
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop side panel ≥1280px — a sinistra del action rail */}
+      <div className="hidden xl:block fixed top-[72px] right-14 bottom-0 z-[1002] w-full max-w-md pointer-events-auto">
         <div className="h-full bg-forest-900/95 backdrop-blur-lg border-l border-forest-600/40 shadow-2xl overflow-y-auto">
           <PanelHeader zone={zone} onClose={onClose} />
           <div className="p-5 space-y-5">
@@ -80,8 +143,14 @@ export default function LocationDetailPanel({
               fmStatus={fmStatus}
               yields={yields}
               predictions={predictions}
-              currentHour={currentHour}
+              hourRange={hourRange}
+              originName={originName}
               mapsLink={mapsLink}
+              coordsLabel={coords.label}
+              selectedDate={selectedDate}
+              tier={tier}
+              origin={origin}
+              onOpenCompassGuide={onOpenCompassGuide}
             />
           </div>
         </div>
@@ -128,8 +197,14 @@ function PanelBody({
   fmStatus,
   yields,
   predictions,
-  currentHour,
+  hourRange,
+  originName,
   mapsLink,
+  coordsLabel,
+  selectedDate,
+  tier,
+  origin,
+  onOpenCompassGuide,
   compact,
 }: {
   activeScore: number;
@@ -138,12 +213,20 @@ function PanelBody({
   fmStatus: ReturnType<typeof getRegionalStatusForZone>;
   yields: ReturnType<typeof estimateYields>;
   predictions: MapHotspot["predictions"];
-  currentHour: number;
+  hourRange: HourRange;
+  originName: string;
   mapsLink: string;
+  coordsLabel: string;
+  selectedDate: string;
+  tier: ServiceTier;
+  origin: GeoPoint;
+  onOpenCompassGuide?: (tab?: "compass" | "territory") => void;
   compact?: boolean;
 }) {
   return (
     <>
+      <HealthSafetyBanner compact={compact} />
+
       <div className="flex items-center gap-3 md:gap-4">
         <div
           className="w-14 h-14 md:w-16 md:h-16 rounded-xl flex items-center justify-center text-xl md:text-2xl font-bold text-white shadow-lg shrink-0"
@@ -164,12 +247,43 @@ function PanelBody({
         </div>
       </div>
 
+      <ZoneEnvironmentAlerts
+        zone={zone}
+        selectedDate={selectedDate}
+        compact={compact}
+      />
+
+      <SoilFruitingSection
+        zone={zone}
+        selectedDate={selectedDate}
+        compact={compact}
+      />
+
+      {onOpenCompassGuide && (
+        <CompassMiniStrip
+          origin={origin}
+          targetLat={isPremiumTier(tier) ? zone.lat : zone.parkingLat}
+          targetLng={isPremiumTier(tier) ? zone.lng : zone.parkingLng}
+          targetLabel={zone.name}
+          onOpenGuide={onOpenCompassGuide}
+          compact={compact}
+        />
+      )}
+
+      {!compact && (
+        <TerritoryGuideSection zone={zone} species={activeSpecies} />
+      )}
+
       <div className="grid grid-cols-2 gap-2 md:gap-3">
-        <InfoBox label="Coordinate GPS" value={formatCoordinates(zone.lat, zone.lng)} mono />
+        <InfoBox
+          label={isPremiumTier(tier) ? "Coordinate GPS" : "Zona approssimativa"}
+          value={coordsLabel}
+          mono
+        />
         <InfoBox label="Quota" value={`${zone.altitude} m`} />
         <InfoBox
-          label="Da Benevento"
-          value={formatDriveFromBenevento(zone.driveMinutesFromBenevento)}
+          label={`Da ${originName}`}
+          value={`${zone.kmFromBenevento} km · ${formatDriveFromOrigin(originName, zone.driveMinutesFromBenevento)}`}
           highlight
         />
         <InfoBox label="Regione" value={getRegionLabel(zone.region)} />
@@ -194,6 +308,13 @@ function PanelBody({
         </div>
       )}
 
+      <MycologyKnowledgeSections
+        zone={zone}
+        species={activeSpecies}
+        selectedDate={selectedDate}
+        compact={compact}
+      />
+
       {!compact && (
         <>
           <div>
@@ -215,7 +336,7 @@ function PanelBody({
             </div>
           </div>
 
-          <CollectionWindowChart zone={zone} currentHour={currentHour} />
+          <CollectionWindowChart zone={zone} hourRange={hourRange} />
 
           <div>
             <p className="text-[10px] uppercase tracking-wider text-forest-400 mb-2">

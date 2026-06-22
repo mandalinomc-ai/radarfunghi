@@ -6,9 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "verify:gemini": "node scripts/verify-gemini.mjs",
+    "verify:positions": "node scripts/simulate-positions.mjs",
+    "verify:sources": "node scripts/verify-source-urls.mjs",
+    "verify:compass": "node scripts/verify-compass.mjs"
   },
   "dependencies": {
+    "@google/genai": "^2.9.0",
+    "@vercel/blob": "^2.4.0",
     "leaflet": "^1.9.4",
     "next": "^15.1.0",
     "react": "^19.0.0",

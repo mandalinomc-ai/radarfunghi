@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MushroomRadar — Zone fungine entro 3h da Benevento",
   description:
-    "Mappa satellitare con predizione oraria di Porcini, Estatini e Galletti in tutte le zone raggiungibili entro 3 ore da Benevento città.",
+    "Mappa satellitare con predizione oraria di Porcini, Estatini e Galletti. Partenza da Benevento, GPS o città personalizzata.",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

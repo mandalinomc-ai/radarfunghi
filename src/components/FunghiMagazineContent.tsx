@@ -7,6 +7,7 @@ import {
   FM_TRAFFIC_LIGHT_COLORS,
   FM_TRAFFIC_LIGHT_LABELS,
   FM_REGIONAL_STATUS,
+  FM_JUNE_SPECIES,
 } from "@/lib/funghimagazineData";
 
 export default function FunghiMagazineContent() {
@@ -33,6 +34,22 @@ export default function FunghiMagazineContent() {
         <p className="text-xs text-forest-300 leading-relaxed">
           {FM_NATIONAL_REPORT.summary}
         </p>
+      </div>
+
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-forest-500 mb-2">
+          Specie in evidenza (FM — giugno)
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {FM_JUNE_SPECIES.map((s) => (
+            <span
+              key={s}
+              className="text-[10px] px-2 py-1 rounded-full bg-forest-800 text-forest-300 border border-forest-700/40"
+            >
+              {s}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div>

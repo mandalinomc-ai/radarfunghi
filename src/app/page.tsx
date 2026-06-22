@@ -1,5 +1,12 @@
-import MushroomRadarApp from "@/components/MushroomRadarApp";
+import { MushroomRadarProvider } from "@/context/MushroomRadarContext";
+import MushroomRadarShell from "@/components/MushroomRadarShell";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export default function Home() {
-  return <MushroomRadarApp />;
+  return (
+    <MushroomRadarProvider>
+      <ServiceWorkerRegister />
+      <MushroomRadarShell />
+    </MushroomRadarProvider>
+  );
 }

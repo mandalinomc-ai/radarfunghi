@@ -5,7 +5,18 @@ import type {
   PredictionResult,
   TerrainExposure,
 } from "./types";
+import { getHoursInRange, type HourRange } from "./timeRange";
+import { isPastItalianDateRange, dayOffsetFromToday } from "./dateUtils";
+import { calculateEnvironmentalMalus } from "./environmentalMalus";
+import { getSocialBonusForRegion } from "./socialScraper";
+import { getReportReliabilityMultiplier } from "./zoneReliabilityBonus";
 import { getRegionalStatusForZone } from "./funghimagazineData";
+import { getZoneForDate } from "./zoneWeather";
+import { calculateHabitatScore } from "./speciesHabitat";
+import {
+  getSeasonalMultiplier,
+  getSeasonalAltitudeRange,
+} from "./seasonalCalendar";
 
 const SPECIES_CONFIG: Record<
   MushroomSpecies,
@@ -24,8 +35,8 @@ const SPECIES_CONFIG: Record<
   estatino: {
     label: "Estatino",
     scientificName: "Boletus aestivalis",
-    altitudeMin: 600,
-    altitudeMax: 900,
+    altitudeMin: 400,
+    altitudeMax: 1300,
     preferredExposure: ["east", "south"],
     minThermalShock: 8,
     minRainMm: 25,
@@ -45,9 +56,9 @@ const SPECIES_CONFIG: Record<
   },
   porcino: {
     label: "Porcino",
-    scientificName: "Boletus edulis",
-    altitudeMin: 1100,
-    altitudeMax: 1600,
+    scientificName: "Boletus edulis / estivo",
+    altitudeMin: 700,
+    altitudeMax: 1500,
     preferredExposure: ["north"],
     minThermalShock: 12,
     minRainMm: 40,
@@ -60,11 +71,22 @@ function clamp(value: number, min = 0, max = 100): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function calculateRainScore(rainHistory: FungalZone["rainHistory"], minRain: number): number {
+function calculateRainScore(
+  rainHistory: FungalZone["rainHistory"],
+  minRain: number,
+  species: MushroomSpecies
+): number {
   const last7 = rainHistory.slice(-7).reduce((sum, d) => sum + d.mm, 0);
   const last14 = rainHistory.reduce((sum, d) => sum + d.mm, 0);
   const recentBoost = last7 / Math.max(minRain, 1);
   const sustainedBoost = last14 / Math.max(minRain * 1.8, 1);
+
+  if (species === "galletto") {
+    return clamp(recentBoost * 32 + sustainedBoost * 38);
+  }
+  if (species === "estatino") {
+    return clamp(recentBoost * 52 + sustainedBoost * 18);
+  }
   return clamp(recentBoost * 45 + sustainedBoost * 25);
 }
 
@@ -145,21 +167,19 @@ export function calculateSproutScore(
   zone: FungalZone,
   species: MushroomSpecies,
   targetHour: number,
-  dayOffset: number
+  selectedDate: string
 ): PredictionResult {
   const config = SPECIES_CONFIG[species];
-  const forecast = zone.hourlyForecasts[targetHour];
+  const z = getZoneForDate(zone, selectedDate);
+  const dayOffset = dayOffsetFromToday(selectedDate);
+  const forecast = z.hourlyForecasts[targetHour];
 
-  const dayFactor = 1 + Math.sin(dayOffset * 0.5) * 0.08;
   const soilMoisture =
-    forecast.soilMoisture * dayFactor +
-    (forecast.humidity - 70) * 0.05;
+    forecast.soilMoisture + (forecast.humidity - 70) * 0.05;
   const thermalShock =
-    zone.nightThermalShock +
-    (forecast.temperature < 12 ? 2 : 0) +
-    dayOffset * 0.3;
+    z.nightThermalShock + (forecast.temperature < 12 ? 2 : 0);
 
-  const rainScore = calculateRainScore(zone.rainHistory, config.minRainMm);
+  const rainScore = calculateRainScore(z.rainHistory, config.minRainMm, species);
   const moistureScore = calculateMoistureScore(
     soilMoisture,
     config.optimalSoilMoisture
@@ -168,24 +188,31 @@ export function calculateSproutScore(
     thermalShock,
     config.minThermalShock
   );
+  const altitudeRange =
+    getSeasonalAltitudeRange(species, selectedDate, z.region) ?? {
+      min: config.altitudeMin,
+      max: config.altitudeMax,
+    };
   const altitudeScore = calculateAltitudeScore(
-    zone.altitude,
-    config.altitudeMin,
-    config.altitudeMax
+    z.altitude,
+    altitudeRange.min,
+    altitudeRange.max
   );
   const exposureScore = calculateExposureScore(
-    zone.exposure,
+    z.exposure,
     config.preferredExposure
   );
-  const timeScore = calculateTimeScore(targetHour, species, zone);
+  const timeScore = calculateTimeScore(targetHour, species, z);
+  const habitatScore = calculateHabitatScore(z, species);
 
   const weights = {
-    rain: 0.2,
-    moisture: 0.22,
-    thermal: 0.18,
-    altitude: 0.2,
-    exposure: 0.1,
-    time: 0.1,
+    rain: 0.18,
+    moisture: 0.2,
+    thermal: 0.16,
+    altitude: 0.16,
+    exposure: 0.08,
+    time: 0.08,
+    habitat: 0.14,
   };
 
   let score = clamp(
@@ -194,13 +221,40 @@ export function calculateSproutScore(
       thermalScore * weights.thermal +
       altitudeScore * weights.altitude +
       exposureScore * weights.exposure +
-      timeScore * weights.time
+      timeScore * weights.time +
+      habitatScore * weights.habitat
   );
 
-  const fmStatus = getRegionalStatusForZone(zone.region, zone.id);
+  const malus = calculateEnvironmentalMalus(z, selectedDate);
+  score = clamp(score * malus.combinedMultiplier);
+
+  const seasonal = getSeasonalMultiplier(species, selectedDate, z.region);
+  score = clamp(score * seasonal);
+
+  const social = getSocialBonusForRegion(z.region);
+  score = clamp(score * social.bonusMultiplier);
+
+  const reportRel = getReportReliabilityMultiplier(z.id);
+  score = clamp(score * reportRel.multiplier);
+
+  const fmStatus = getRegionalStatusForZone(z.region, z.id);
   if (fmStatus) {
-    if (species === "porcino" && fmStatus.soilStatus === "freddo") {
-      score = clamp(score * 0.55);
+    const porciniSeasonOpen =
+      !fmStatus.porciniFrom ||
+      isPastItalianDateRange(fmStatus.porciniFrom, selectedDate);
+
+    if (
+      species === "porcino" &&
+      fmStatus.soilStatus === "freddo" &&
+      !porciniSeasonOpen
+    ) {
+      score = clamp(score * 0.7);
+    } else if (
+      species === "porcino" &&
+      fmStatus.soilStatus === "freddo" &&
+      porciniSeasonOpen
+    ) {
+      score = clamp(score * 0.9);
     }
     if (species === "galletto" && fmStatus.speciesActive.some((s) => s.includes("Galletto") || s.includes("Finferlo"))) {
       score = clamp(score * 1.12);
@@ -228,18 +282,25 @@ export function calculateSproutScore(
 export function buildHotspots(
   zones: FungalZone[],
   activeSpecies: MushroomSpecies | "all",
-  targetHour: number,
-  dayOffset: number
+  hourRange: HourRange,
+  selectedDate: string
 ): MapHotspot[] {
+  const hours = getHoursInRange(hourRange);
+
   return zones.map((zone) => {
     const relevantSpecies =
       activeSpecies === "all"
         ? zone.species
         : zone.species.filter((s) => s === activeSpecies);
 
-    const predictions = relevantSpecies.map((species) =>
-      calculateSproutScore(zone, species, targetHour, dayOffset)
-    );
+    const predictions = relevantSpecies.map((species) => {
+      const hourlyPredictions = hours.map((hour) =>
+        calculateSproutScore(zone, species, hour, selectedDate)
+      );
+      return hourlyPredictions.reduce((best, current) =>
+        current.score > best.score ? current : best
+      );
+    });
 
     const best =
       predictions.length > 0

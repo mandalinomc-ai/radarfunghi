@@ -1,10 +1,15 @@
 import type { FungalZone } from "./types";
 import {
   BENEVENTO,
+  driveMinutesToKm,
   MAX_DRIVE_MINUTES_FROM_BENEVENTO,
 } from "./benevento";
+import { assertZonesValid } from "./zoneCoordinateService";
 
-type ZoneInput = Omit<FungalZone, "driveMinutesFromBenevento">;
+type ZoneInput = Omit<
+  FungalZone,
+  "driveMinutesFromBenevento" | "kmFromBenevento"
+>;
 
 /** Tempi di percorrenza stimati da Benevento città (strade, non in linea d'aria) */
 const DRIVE_FROM_BENEVENTO: Record<string, number> = {
@@ -229,8 +234,8 @@ const RAW_FUNGAL_ZONES: ZoneInput[] = [
     rainHistory: generateRainHistory(11),
     baseSoilMoisture: 70,
     nightThermalShock: 12.1,
-    parkingLat: 41.0789,
-    parkingLng: 14.6445,
+    parkingLat: 41.0718,
+    parkingLng: 14.6654,
     hourlyForecasts: generateHourlyForecasts(15, 76, 70),
     collectionWindow: {
       startHour: 5,
@@ -253,8 +258,8 @@ const RAW_FUNGAL_ZONES: ZoneInput[] = [
     rainHistory: generateRainHistory(16),
     baseSoilMoisture: 79,
     nightThermalShock: 10.5,
-    parkingLat: 41.0789,
-    parkingLng: 14.6445,
+    parkingLat: 41.0718,
+    parkingLng: 14.6654,
     hourlyForecasts: generateHourlyForecasts(13, 82, 79),
     collectionWindow: {
       startHour: 6,
@@ -277,8 +282,8 @@ const RAW_FUNGAL_ZONES: ZoneInput[] = [
     rainHistory: generateRainHistory(21),
     baseSoilMoisture: 83,
     nightThermalShock: 14.5,
-    parkingLat: 41.0789,
-    parkingLng: 14.6445,
+    parkingLat: 41.0718,
+    parkingLng: 14.6654,
     hourlyForecasts: generateHourlyForecasts(11, 86, 83),
     collectionWindow: {
       startHour: 5,
@@ -746,14 +751,20 @@ const RAW_FUNGAL_ZONES: ZoneInput[] = [
   },
 ];
 
-export const FUNGAL_ZONES: FungalZone[] = RAW_FUNGAL_ZONES.map((zone) => ({
-  ...zone,
-  driveMinutesFromBenevento:
-    DRIVE_FROM_BENEVENTO[zone.id] ?? MAX_DRIVE_MINUTES_FROM_BENEVENTO + 1,
-})).filter(
+export const FUNGAL_ZONES: FungalZone[] = RAW_FUNGAL_ZONES.map((zone) => {
+  const driveMinutesFromBenevento =
+    DRIVE_FROM_BENEVENTO[zone.id] ?? MAX_DRIVE_MINUTES_FROM_BENEVENTO + 1;
+  return {
+    ...zone,
+    driveMinutesFromBenevento,
+    kmFromBenevento: driveMinutesToKm(driveMinutesFromBenevento),
+  };
+}).filter(
   (zone) =>
     zone.driveMinutesFromBenevento <= MAX_DRIVE_MINUTES_FROM_BENEVENTO
 );
+
+assertZonesValid(FUNGAL_ZONES);
 
 export const MAP_CENTER = { lat: BENEVENTO.lat, lng: BENEVENTO.lng };
 export const MAP_DEFAULT_ZOOM = 9;
