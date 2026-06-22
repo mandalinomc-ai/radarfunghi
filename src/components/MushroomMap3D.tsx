@@ -94,12 +94,8 @@ export default function MushroomMap3D({
 
         const imageryProvider = await createSatelliteImageryProvider(Cesium);
 
-        let hasTerrain = false;
-        let terrainProvider: TerrainProvider = new Cesium.EllipsoidTerrainProvider();
-        if (ionToken) {
-          terrainProvider = await createWorldTerrain(Cesium);
-          hasTerrain = !(terrainProvider instanceof Cesium.EllipsoidTerrainProvider);
-        }
+        const terrainProvider = await createWorldTerrain(Cesium);
+        const hasTerrain = !(terrainProvider instanceof Cesium.EllipsoidTerrainProvider);
 
         cesiumRef.current = Cesium;
 
@@ -172,6 +168,7 @@ export default function MushroomMap3D({
 
         detachCameraRef.current = attachQualityOnCameraMove(
           viewer,
+          Cesium,
           onMoveStart,
           onMoveEnd,
           labelLayersRef.current,
@@ -326,6 +323,7 @@ export default function MushroomMap3D({
       if (!viewerInst.isDestroyed()) {
         applyGameCameraRules(
           viewerInst,
+          Cesium,
           labelLayersRef.current,
           selectedZoneRef.current
         );

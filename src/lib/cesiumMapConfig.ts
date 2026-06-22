@@ -1,5 +1,4 @@
 import type { Viewer } from "cesium";
-import { ConstantProperty } from "cesium";
 import type { CesiumRuntime } from "./loadCesium";
 import { CARTO_VOYAGER_LABELS_URL } from "./mapUtils";
 
@@ -203,19 +202,21 @@ export function applyGlobeQualityForCameraHeight(viewer: Viewer): void {
 }
 
 function setLabelVisibility(
+  Cesium: CesiumRuntime,
   label: import("cesium").LabelGraphics,
   visible: boolean
 ): void {
   const prop = label.show;
-  if (prop instanceof ConstantProperty) {
+  if (prop instanceof Cesium.ConstantProperty) {
     prop.setValue(visible);
   } else {
-    label.show = new ConstantProperty(visible);
+    label.show = new Cesium.ConstantProperty(visible);
   }
 }
 
 export function applyGameCameraRules(
   viewer: Viewer,
+  Cesium: CesiumRuntime,
   labelTileLayers: import("cesium").ImageryLayer[],
   selectedZoneId: string | null
 ): void {
@@ -246,12 +247,13 @@ export function applyGameCameraRules(
       const zoneId = id.replace("hotspot-", "");
       const isSelected = zoneId === selectedZoneId;
       setLabelVisibility(
+        Cesium,
         entity.label,
         showEntityLabels && (isSelected || height < 12_000)
       );
     }
     if (entity.label && id.startsWith("region-badge-")) {
-      setLabelVisibility(entity.label, height > 8000);
+      setLabelVisibility(Cesium, entity.label, height > 8000);
     }
   }
 
@@ -265,6 +267,7 @@ export function applyGameCameraRules(
 
 export function attachQualityOnCameraMove(
   viewer: Viewer,
+  Cesium: CesiumRuntime,
   onMoveStart: (() => void) | undefined,
   onMoveEnd: (() => void) | undefined,
   labelTileLayers: import("cesium").ImageryLayer[],
@@ -272,7 +275,7 @@ export function attachQualityOnCameraMove(
 ): () => void {
   const onChanged = () => {
     applyGlobeQualityForCameraHeight(viewer);
-    applyGameCameraRules(viewer, labelTileLayers, getSelectedZoneId());
+    applyGameCameraRules(viewer, Cesium, labelTileLayers, getSelectedZoneId());
   };
   viewer.camera.changed.addEventListener(onChanged);
   if (onMoveStart) viewer.camera.moveStart.addEventListener(onMoveStart);

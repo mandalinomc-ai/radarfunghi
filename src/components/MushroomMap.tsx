@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { Component, useCallback, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import MapViewModeToggle from "./map/MapViewModeToggle";
 import {
@@ -19,6 +19,26 @@ const MushroomMap3D = dynamic(() => import("./MushroomMap3D"), {
   ssr: false,
   loading: () => <MapLoading label="Caricamento globo 3D…" />,
 });
+
+class Map3DErrorBoundary extends Component<
+  { onFallback: () => void; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch() {
+    this.props.onFallback();
+  }
+
+  render() {
+    if (this.state.failed) return null;
+    return this.props.children;
+  }
+}
 
 function MapLoading({ label }: { label: string }) {
   return (
@@ -41,13 +61,20 @@ export default function MushroomMap(props: MushroomMapProps) {
     saveMapViewMode(mode);
   }, []);
 
+  const fallbackTo2D = useCallback(() => {
+    setViewMode("2d");
+    saveMapViewMode("2d");
+  }, []);
+
   return (
     <div className="relative w-full h-full">
       <MapViewModeToggle mode={viewMode} onChange={handleModeChange} />
       {viewMode === "2d" ? (
         <MushroomMapLeaflet {...props} />
       ) : (
-        <MushroomMap3D {...props} onSwitchTo2D={() => handleModeChange("2d")} />
+        <Map3DErrorBoundary onFallback={fallbackTo2D}>
+          <MushroomMap3D {...props} onSwitchTo2D={fallbackTo2D} />
+        </Map3DErrorBoundary>
       )}
     </div>
   );
