@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface MobileDockToolbarProps {
   onOpenChat: () => void;
   onOpenGuide: () => void;
@@ -16,7 +18,7 @@ interface MobileDockToolbarProps {
   pendingCount?: number;
 }
 
-/** Barra azioni integrata nel dock inferiore (solo mobile) */
+/** Barra azioni mobile: 5 azioni principali + pannello Altro */
 export function MobileDockToolbar({
   onOpenChat,
   onOpenGuide,
@@ -32,29 +34,44 @@ export function MobileDockToolbar({
   spyZoneCount = 0,
   pendingCount = 0,
 }: MobileDockToolbarProps) {
+  const [moreOpen, setMoreOpen] = useState(false);
+
   return (
-    <div className="md:hidden flex gap-0.5 px-1 pt-1.5 pb-0.5 border-b border-forest-700/40 overflow-x-auto scrollbar-none">
-      <DockBtn onClick={onOpenChat} icon="💬" label="Chat" accent />
-      <DockBtn onClick={onOpenGuide} icon="🍄" label="Guida" />
-      <DockBtn onClick={onOpenFilters} icon="⚙️" label="Filtri" />
-      <DockBtn
-        onClick={onOpenReport}
-        icon="📍"
-        label="Segnala"
-        badge={reportCount > 0 ? reportCount : undefined}
-        pendingBadge={pendingCount}
-      />
-      <DockBtn
-        onClick={onOpenSpyZone}
-        icon="👁"
-        label="Spia"
-        badge={spyZoneCount > 0 ? spyZoneCount : undefined}
-      />
-      <DockBtn onClick={onOpenCompass} icon="🧭" label="Bussola" />
-      <DockBtn onClick={onOpenWeatherSpy} icon="🌧️" label="Meteo" />
-      <DockBtn onClick={onOpenSources} icon="📊" label="Fonti" />
-      <DockBtn onClick={onOpenFM} icon="📡" label="FM" />
-      <DockBtn onClick={onOpenLegend} icon="🗺️" label="Legenda" />
+    <div className="md:hidden border-b border-forest-700/40">
+      <div className="flex gap-1 px-1 pt-1.5 pb-1">
+        <DockBtn onClick={onOpenChat} icon="💬" label="Chat" accent />
+        <DockBtn onClick={onOpenFilters} icon="⚙️" label="Filtri" />
+        <DockBtn onClick={onOpenGuide} icon="🍄" label="Guida" />
+        <DockBtn
+          onClick={onOpenReport}
+          icon="📍"
+          label="Segnala"
+          badge={reportCount > 0 ? reportCount : undefined}
+          pendingBadge={pendingCount}
+        />
+        <DockBtn
+          onClick={() => setMoreOpen((v) => !v)}
+          icon={moreOpen ? "▲" : "⋯"}
+          label="Altro"
+          highlight={moreOpen}
+        />
+      </div>
+      {moreOpen && (
+        <div className="grid grid-cols-4 gap-1 px-1 pb-1.5 border-t border-forest-800/60 pt-1.5">
+          <DockBtn
+            onClick={onOpenSpyZone}
+            icon="👁"
+            label="Spia"
+            badge={spyZoneCount > 0 ? spyZoneCount : undefined}
+            compact
+          />
+          <DockBtn onClick={onOpenCompass} icon="🧭" label="Bussola" compact />
+          <DockBtn onClick={onOpenWeatherSpy} icon="🌧️" label="Meteo" compact />
+          <DockBtn onClick={onOpenSources} icon="📊" label="Fonti" compact />
+          <DockBtn onClick={onOpenFM} icon="📡" label="FM" compact />
+          <DockBtn onClick={onOpenLegend} icon="🗺️" label="Legenda" compact />
+        </div>
+      )}
     </div>
   );
 }
@@ -67,6 +84,7 @@ function DockBtn({
   accent,
   badge,
   pendingBadge,
+  compact,
 }: {
   onClick: () => void;
   icon: string;
@@ -75,33 +93,38 @@ function DockBtn({
   accent?: boolean;
   badge?: number;
   pendingBadge?: number;
+  compact?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center justify-center min-w-[52px] flex-1 max-w-[72px] py-1.5 rounded-lg touch-manipulation active:scale-95 ${
+      className={`relative flex flex-col items-center justify-center rounded-xl touch-manipulation active:scale-95 ${
+        compact ? "py-2 min-h-[52px]" : "flex-1 py-2 min-h-[56px]"
+      } ${
         highlight
-          ? "bg-green-700/40"
+          ? "bg-forest-700/50"
           : accent
             ? "bg-mushroom-700/35"
             : "hover:bg-forest-800/50"
       }`}
     >
-      <span className="text-base leading-none">{icon}</span>
+      <span className={`leading-none ${compact ? "text-sm" : "text-lg"}`}>
+        {icon}
+      </span>
       <span
-        className={`text-[8px] font-medium mt-0.5 ${
-          highlight || accent ? "text-white" : "text-forest-400"
-        }`}
+        className={`font-medium mt-0.5 ${
+          compact ? "text-[8px]" : "text-[9px]"
+        } ${highlight || accent ? "text-white" : "text-forest-400"}`}
       >
         {label}
       </span>
       {pendingBadge !== undefined && pendingBadge > 0 && (
-        <span className="absolute top-0 right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-orange-500 text-[7px] text-white font-bold flex items-center justify-center">
+        <span className="absolute top-0.5 right-1 min-w-[14px] h-3.5 px-0.5 rounded-full bg-orange-500 text-[7px] text-white font-bold flex items-center justify-center">
           {pendingBadge > 9 ? "9+" : pendingBadge}
         </span>
       )}
       {badge !== undefined && badge > 0 && (
-        <span className="absolute top-0.5 right-1 w-3.5 h-3.5 rounded-full bg-mushroom-500 text-[7px] text-white flex items-center justify-center">
+        <span className="absolute top-1 right-1.5 w-3.5 h-3.5 rounded-full bg-mushroom-500 text-[7px] text-white flex items-center justify-center">
           {badge > 9 ? "9+" : badge}
         </span>
       )}

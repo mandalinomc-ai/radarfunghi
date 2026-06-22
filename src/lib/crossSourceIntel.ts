@@ -141,6 +141,41 @@ export function getCrossSourceMultiplier(
 let sharedSnapshot: CitizenScienceSnapshot | null = null;
 let sharedAt = 0;
 
+/** Moltiplicatori cross-fonte pre-calcolati sul server (sync) — allinea client e mappa */
+let syncedCrossMultipliers: Record<
+  string,
+  Partial<Record<MushroomSpecies, number>>
+> = {};
+
+export function setSyncedCrossMultipliers(
+  data: Record<string, Partial<Record<MushroomSpecies, number>>>
+): void {
+  syncedCrossMultipliers = data;
+}
+
+export function getSyncedCrossMultiplier(
+  zoneId: string,
+  species: MushroomSpecies
+): number | null {
+  const v = syncedCrossMultipliers[zoneId]?.[species];
+  return typeof v === "number" ? v : null;
+}
+
+export function computeAllZoneCrossMultipliers(
+  zones: FungalZone[],
+  snapshot: CitizenScienceSnapshot | null
+): Record<string, Partial<Record<MushroomSpecies, number>>> {
+  const speciesList: MushroomSpecies[] = ["porcino", "estatino", "galletto"];
+  const out: Record<string, Partial<Record<MushroomSpecies, number>>> = {};
+  for (const zone of zones) {
+    out[zone.id] = {};
+    for (const sp of speciesList) {
+      out[zone.id][sp] = getCrossSourceMultiplier(zone, sp, snapshot).multiplier;
+    }
+  }
+  return out;
+}
+
 export function getCachedCitizenSnapshot(): CitizenScienceSnapshot | null {
   return sharedSnapshot;
 }

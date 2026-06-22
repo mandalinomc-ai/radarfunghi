@@ -3,7 +3,9 @@
 import type { MapHotspot } from "@/lib/types";
 import {
   formatCoordinates,
+  getGoogleEarthPinLink,
   getGoogleMapsDeepLink,
+  getGoogleMapsForagingLink,
   SPECIES_COLORS,
 } from "@/lib/mapUtils";
 import {
@@ -382,10 +384,30 @@ function PanelBody({
         rel="noopener noreferrer"
         className="block w-full py-4 rounded-xl bg-gradient-to-r from-mushroom-500 to-mushroom-600 active:from-mushroom-400 active:to-mushroom-500 text-white text-center font-bold text-sm tracking-wide shadow-lg transition-all touch-manipulation"
       >
-        🧭 APRI IN GOOGLE MAPS
+        🧭 NAVIGA AL PARCHEGGIO (Maps)
       </a>
-      <p className="text-[10px] text-forest-500 text-center">
-        Parcheggio: {formatCoordinates(zone.parkingLat, zone.parkingLng)}
+      <div className="flex gap-2">
+        <a
+          href={getGoogleMapsForagingLink(zone.lat, zone.lng, zone.name, zone.altitude)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 py-2.5 rounded-xl bg-teal-900/50 text-teal-100 text-center text-[11px] font-semibold touch-manipulation"
+        >
+          Maps raccolta
+        </a>
+        <a
+          href={getGoogleEarthPinLink(zone.lat, zone.lng)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 py-2.5 rounded-xl bg-blue-900/50 text-blue-100 text-center text-[11px] font-semibold touch-manipulation"
+        >
+          Earth raccolta
+        </a>
+      </div>
+      <p className="text-[10px] text-forest-500 text-center leading-snug">
+        🅿️ Parcheggio: {formatCoordinates(zone.parkingLat, zone.parkingLng)}
+        <br />
+        🌲 Raccolta: {formatCoordinates(zone.lat, zone.lng)} · {zone.altitude} m
       </p>
       <p className="text-[10px] text-forest-600 text-center pb-1">
         Fonte:{" "}

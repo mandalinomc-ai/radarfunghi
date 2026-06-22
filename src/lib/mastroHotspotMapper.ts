@@ -4,6 +4,7 @@ import { getHoursInRange, type HourRange } from "./timeRange";
 import { assessInfestationRisk } from "./infestationEngine";
 import { getSocialBonusForRegion } from "./socialScraper";
 import { getParkingLabel } from "./chatZoneResults";
+import { formatCoordinates } from "./mapUtils";
 
 /** Payload hotspot per il Mastro Fungaiolo (serializzabile in Server Action) */
 export interface MastroHotspotPayload {
@@ -76,7 +77,8 @@ function speciesLabels(hotspot: MapHotspot): string[] {
 /** Converte MapHotspot[] → payload Mastro con meteo e trend social */
 export function mapHotspotsToMastroPayload(
   hotspots: MapHotspot[],
-  hourRange: HourRange
+  hourRange: HourRange,
+  limit = 18
 ): MastroHotspotPayload[] {
   return hotspots
     .map((h) => {
@@ -110,7 +112,30 @@ export function mapHotspotsToMastroPayload(
         infestationRisk: infestation.risk,
       };
     })
-    .sort((a, b) => b.sproutScore - a.sproutScore);
+    .sort((a, b) => b.sproutScore - a.sproutScore)
+    .slice(0, limit);
+}
+
+/** Testo compatto per prompt Gemini — meno token, stessi numeri della mappa */
+export function formatMastroHotspotsBlock(
+  hotspots: MastroHotspotPayload[],
+  limit = 18
+): string {
+  if (hotspots.length === 0) {
+    return "NESSUN HOTSPOT NEL RAGGIO. Suggerisci di ampliare km o cambiare giorno/specie.";
+  }
+  return hotspots
+    .slice(0, limit)
+    .map((h, i) =>
+      [
+        `${i + 1}. [${h.id}] ${h.name} (${h.region}) — Sprout ${h.sproutScore}%`,
+        `   ${h.altitude}m · ${h.forestType} · ${h.distanceKm ?? "?"}km ~${h.travelTimeMin ?? "?"}min`,
+        `   T${h.temperature ?? "?"}°C umid.suolo${h.soilMoisture ?? "?"}% vento${h.windSpeed ?? "?"}km/h`,
+        `   Parcheggio: ${formatCoordinates(h.parkingLat, h.parkingLng)} · Raccolta: ${formatCoordinates(h.foragingLat, h.foragingLng)}`,
+        `   Specie: ${(h.species ?? []).join(", ")}${h.socialTrendActive ? " · trend social" : ""}${h.infestationRisk === "ALTO" ? " · larve ALTO" : ""}`,
+      ].join("\n")
+    )
+    .join("\n\n");
 }
 
 export function mastroPayloadToSpecies(

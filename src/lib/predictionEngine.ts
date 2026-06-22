@@ -14,6 +14,7 @@ import { getRegionalStatusForZone } from "./funghimagazineData";
 import {
   getCachedCitizenSnapshot,
   getCrossSourceMultiplier,
+  getSyncedCrossMultiplier,
 } from "./crossSourceIntel";
 import { getZoneForDate } from "./zoneWeather";
 import { calculateHabitatScore } from "./speciesHabitat";
@@ -241,12 +242,17 @@ export function calculateSproutScore(
   const reportRel = getReportReliabilityMultiplier(z.id);
   score = clamp(score * reportRel.multiplier);
 
-  const cross = getCrossSourceMultiplier(
-    z,
-    species,
-    getCachedCitizenSnapshot()
-  );
-  score = clamp(score * cross.multiplier);
+  const syncedCross = getSyncedCrossMultiplier(z.id, species);
+  if (syncedCross !== null) {
+    score = clamp(score * syncedCross);
+  } else {
+    const cross = getCrossSourceMultiplier(
+      z,
+      species,
+      getCachedCitizenSnapshot()
+    );
+    score = clamp(score * cross.multiplier);
+  }
 
   const fmStatus = getRegionalStatusForZone(z.region, z.id);
   if (fmStatus) {

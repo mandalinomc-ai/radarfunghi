@@ -7,7 +7,9 @@ import { enrichZoneWithLiveWeather } from "@/lib/zoneWeather";
 import { CLIENT_AUTO_REFRESH_MS } from "@/lib/constants";
 import { todayISO } from "@/lib/dateUtils";
 import { setZoneReliabilityFromSync } from "@/lib/zoneReliabilityBonus";
+import { setSyncedCrossMultipliers } from "@/lib/crossSourceIntel";
 import type { ZoneReliabilityRecord } from "@/lib/zoneReliabilityStore";
+import type { MushroomSpecies } from "@/lib/types";
 
 interface SyncWeatherZone {
   zoneId: string;
@@ -29,13 +31,18 @@ interface SyncResponse {
   } | null;
   weatherError: string | null;
   zoneReliability?: ZoneReliabilityRecord[];
+  crossMultipliers?: Record<string, Partial<Record<MushroomSpecies, number>>>;
   sources: SourceStatus[];
   autoRefreshMs: number;
   serverCronMinutes: number;
   nextClientRefreshAt: string;
 }
 
-export function useLiveZones(baseZones: FungalZone[], selectedDate: string) {
+export function useLiveZones(
+  baseZones: FungalZone[],
+  selectedDate: string,
+  options?: { pauseRefresh?: boolean }
+) {
   const [zones, setZones] = useState<FungalZone[]>(baseZones);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +80,9 @@ export function useLiveZones(baseZones: FungalZone[], selectedDate: string) {
       });
       if (data.zoneReliability?.length) {
         setZoneReliabilityFromSync(data.zoneReliability);
+      }
+      if (data.crossMultipliers) {
+        setSyncedCrossMultipliers(data.crossMultipliers);
       }
       setError(
         data.weatherError && applied === 0
@@ -117,6 +127,7 @@ export function useLiveZones(baseZones: FungalZone[], selectedDate: string) {
   }, [refresh]);
 
   useEffect(() => {
+    if (options?.pauseRefresh) return;
     intervalRef.current = setInterval(
       () => refresh(true),
       CLIENT_AUTO_REFRESH_MS
@@ -124,9 +135,10 @@ export function useLiveZones(baseZones: FungalZone[], selectedDate: string) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [refresh]);
+  }, [refresh, options?.pauseRefresh]);
 
   useEffect(() => {
+    if (options?.pauseRefresh) return;
     const onVisible = () => {
       if (document.visibilityState === "visible") {
         refresh(true);
@@ -134,7 +146,7 @@ export function useLiveZones(baseZones: FungalZone[], selectedDate: string) {
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [refresh]);
+  }, [refresh, options?.pauseRefresh]);
 
   return {
     zones,

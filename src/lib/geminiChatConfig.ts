@@ -16,6 +16,7 @@ import { formatYoutubeSourcesForGemini } from "./youtubeSources";
 import { getCachedVerifications } from "./sourceVerificationCache";
 import { getCachedCitizenSnapshot } from "./crossSourceIntel";
 import type { MastroHotspotPayload } from "./mastroHotspotMapper";
+import { formatMastroHotspotsBlock } from "./mastroHotspotMapper";
 import { getParkingLabel } from "./chatZoneResults";
 
 import {
@@ -63,6 +64,11 @@ export interface GeminiChatContextMeta {
   liveData: boolean;
   lastUpdate: string | null;
   speciesFilter: MushroomSpecies | "all";
+  /** Turni precedenti per domande di follow-up */
+  conversationHistory?: Array<{ role: "user" | "model"; text: string }>;
+  /** Zone della risposta precedente (riferimento esplicito) */
+  priorResultsBlock?: string;
+  isFollowUp?: boolean;
 }
 
 export type { CampaniaSocialTrend };
@@ -239,7 +245,7 @@ function buildVerifiedSourcesBlock(): string {
     const ytBlock = formatYoutubeSourcesForGemini(ytVerified, 8);
     return `${officialBlock}\n\n${ytBlock}`;
   }
-  return `${formatCertifiedSourcesForGemini(30)}\n\n(Verifica URL fonti non ancora in cache — preferire enti .gov.it e Funghimagazine)`;
+  return `${formatCertifiedSourcesForGemini(12)}\n\n(Preferire enti .gov.it, Funghimagazine, AMINT)`;
 }
 
 export function buildMastroFungaioloSystemInstruction(
@@ -253,10 +259,33 @@ export function buildMastroFungaioloSystemInstruction(
     ? `iNaturalist API: ${cs.inatTotal} osservazioni Fungi geolocalizzate nel radar (Campania/Molise/Basilicata). Mushroom Observer API: ${cs.moTotal} record nel bbox. Sync: ${cs.fetchedAt}. Questi dati incrociano Sprout Score, meteo (pressione/vento/raffiche da Open-Meteo) e segnali AMINT/Funghimagazine.`
     : "Citizen science (iNaturalist/Mushroom Observer) in caricamento — usa Sprout Score e meteo live.";
 
-  return `Sei l'Assistente AI ufficiale di MushroomRadar, un anziano Mastro Fungaiolo del Sud Italia. Il tuo carattere è schietto, pragmatico, caloroso e profondamente radicato nelle tradizioni locali dei boschi del Sannio, del Matese e dell'Irpinia. Conosci la biologia dei funghi a livello scientifico ed empirico.
+  const followUpBlock = meta.isFollowUp
+    ? `
+DOMANDA DI FOLLOW-UP — REGOLE AGGIUNTIVE:
+- L'utente si riferisce alla conversazione precedente. NON ripetere la stessa lista di zone come se fosse una nuova ricerca.
+- Rispondi alla domanda SPECIFICA (conteggio specie, coordinate, confronto, dettaglio) usando le ZONE DELLA RISPOSTA PRECEDENTE elencate sotto.
+- Se chiede quante specie, conta le specie distinte con score ≥28% nelle zone precedenti usando i dati "Score per specie" degli hotspot corrispondenti.
+- Se chiede coordinate, usa foragingLat/foragingLng (raccolta) e parkingLat/parkingLng (parcheggio) — sono punti diversi.
+- recommendedHotspotId: null se la domanda non richiede una nuova raccomandazione.
 
+ZONE DELLA RISPOSTA PRECEDENTE (riferimento vincolante):
+${meta.priorResultsBlock ?? "n/d"}
+
+CRONOLOGIA CHAT RECENTE:
+${
+  meta.conversationHistory?.length
+    ? meta.conversationHistory
+        .map((t) => `${t.role === "user" ? "Utente" : "Mastro"}: ${t.text.slice(0, 800)}`)
+        .join("\n\n")
+    : "n/d"
+}
+`
+    : "";
+
+  return `Sei l'Assistente AI ufficiale di MushroomRadar, un anziano Mastro Fungaiolo del Sud Italia. Il tuo carattere è schietto, pragmatico, caloroso e profondamente radicato nelle tradizioni locali dei boschi del Sannio, del Matese e dell'Irpinia. Conosci la biologia dei funghi a livello scientifico ed empirico.
+${followUpBlock}
 Hai accesso in tempo reale a questi dati reali degli hotspot fungini calcolati dal sistema per le zone entro 3 ore da Benevento:
-${JSON.stringify(hotspots, null, 2)}
+${formatMastroHotspotsBlock(hotspots)}
 
 CONTESTO RICERCA:
 - Origine: ${meta.originName}
@@ -280,15 +309,16 @@ REGOLE RIGIDE DI COMPORTAMENTO:
 6. Identificazione funghi sempre con esperto; rispetto ambientale; non condividere spot sensibili.
 7. Restituisci JSON con 'reply' in Markdown e 'recommendedHotspotId' (id hotspot dalla lista, o null).
 8. Usa SOLO i CONSIGLI ESPERTI e REGOLE SICUREZZA elencati sotto — non inventare habitat o normative.
-9. COORDINATE: ogni hotspot ha foragingLat/foragingLng (area raccolta in bosco) e parkingLat/parkingLng (parcheggio base). Quando citi una zona, specifica che Google Maps va al PARcheggio e la raccolta è a piedi verso le coordinate foraging.
+9. COORDINATE: ogni hotspot ha foragingLat/foragingLng (punto raccolta in bosco) e parkingLat/parkingLng (parcheggio strada). Sono due GPS diversi — non confonderli. I numeri a 5 decimali coincidono su Google Maps e Google Earth. Parcheggio = auto; raccolta = a piedi in bosco.
 10. Gli Sprout Score e percentuali DEVONO coincidere con i valori sproutScore nel JSON — non arrotondare diversamente.
 
 CONSIGLI ESPERTI (Funghimagazine, ARPA, normativa):
 ${getGlobalExpertTips()
+  .slice(0, 4)
   .map((t) => `- ${t.title}: ${t.tip} [${t.source}]`)
   .join("\n")}
 ${EXPERT_TIPS.filter((t) => t.species)
-  .slice(0, 6)
+  .slice(0, 3)
   .map((t) => `- ${t.title} (${t.species}): ${t.tip}`)
   .join("\n")}
 
@@ -410,7 +440,7 @@ export async function generateMastroFungaioloReply(
     hotspots,
     meta
   );
-  const models = resolveMastroModels();
+  const models = resolveMastroModels().slice(0, 2);
   let lastError: Error | null = null;
 
   for (const model of models) {
@@ -421,6 +451,7 @@ export async function generateMastroFungaioloReply(
         systemPrompt: systemInstruction,
         apiKey,
         modelName: model,
+        conversationHistory: meta.conversationHistory,
       });
       return {
         reply: rest.reply,
@@ -428,12 +459,6 @@ export async function generateMastroFungaioloReply(
         model: rest.model,
         hotspotCount: hotspots.length,
       };
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-    }
-
-    try {
-      return await generateMastroViaSdk(trimmed, hotspots, meta, model);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
     }

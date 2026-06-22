@@ -32,7 +32,7 @@ export default function MobileSheet({
       />
 
       {/* Mobile: bottom sheet */}
-      <div className="md:hidden absolute bottom-0 left-0 right-0 max-h-[85dvh] bg-forest-900 border-t border-forest-600/40 rounded-t-2xl shadow-2xl overflow-hidden flex flex-col safe-bottom">
+      <div className="md:hidden absolute bottom-0 left-0 right-0 max-h-[90dvh] bg-forest-900 border-t border-forest-600/40 rounded-t-2xl shadow-2xl overflow-hidden flex flex-col safe-bottom">
         <SheetHeader title={title} onClose={onClose} />
         <div className={contentClass}>{children}</div>
       </div>

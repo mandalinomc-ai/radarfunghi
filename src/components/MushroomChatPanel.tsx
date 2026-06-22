@@ -11,6 +11,8 @@ import { platformLabel } from "@/lib/socialEvidence";
 interface MushroomChatPanelProps {
   messages: ChatMessage[];
   loading: boolean;
+  geminiLoading?: boolean;
+  studyWindowLabel?: string;
   onSend: (text: string) => void;
   onClear: () => void;
   onZoneSelect?: (result: ChatZoneResult) => void;
@@ -21,6 +23,8 @@ interface MushroomChatPanelProps {
 export default function MushroomChatPanel({
   messages,
   loading,
+  geminiLoading = false,
+  studyWindowLabel,
   onSend,
   onClear,
   onZoneSelect,
@@ -73,6 +77,9 @@ export default function MushroomChatPanel({
     });
   }, [messages, loading]);
 
+  const busy = loading || geminiLoading;
+  const inputDisabled = loading;
+
   const submit = (text?: string) => {
     const q = (text ?? input).trim();
     if (!q || loading) return;
@@ -81,19 +88,24 @@ export default function MushroomChatPanel({
   };
 
   return (
-    <div
-      className={`flex flex-col min-h-0 h-full ${className}`}
-    >
-      <div className="flex items-center justify-between px-1 pb-2 shrink-0">
-        <p className="text-[10px] text-forest-500">
-          Dati live · oggi/domani · coordinate e %
-        </p>
+    <div className={`flex flex-col min-h-0 h-full ${className}`}>
+      <div className="flex items-start justify-between gap-2 px-1 pb-2 shrink-0">
+        <div className="min-w-0">
+          <p className="text-[10px] text-forest-500 leading-snug">
+            % identiche alla mappa · meteo live
+          </p>
+          {studyWindowLabel && (
+            <p className="text-[10px] text-mushroom-400/90 font-medium mt-0.5">
+              Fascia studio: {studyWindowLabel}
+            </p>
+          )}
+        </div>
         <button
           type="button"
           onClick={onClear}
-          className="text-[10px] text-forest-500 hover:text-mushroom-400 touch-manipulation"
+          className="shrink-0 text-[10px] text-forest-500 hover:text-mushroom-400 touch-manipulation"
         >
-          Pulisci chat
+          Pulisci
         </button>
       </div>
 
@@ -115,25 +127,27 @@ export default function MushroomChatPanel({
             className="flex items-center gap-2 text-xs text-forest-500 pl-1 scroll-mt-2"
           >
             <span className="w-4 h-4 border-2 border-mushroom-400 border-t-transparent rounded-full animate-spin" />
-            Analisi Sprout Score e meteo live...
+            Lettura radar e fascia oraria…
           </div>
         )}
       </div>
 
       <div className="shrink-0 pt-2 space-y-2 border-t border-forest-700/40 mt-2">
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {SUGGESTED_CHAT_PROMPTS.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => submit(prompt)}
-              disabled={loading}
-              className="shrink-0 text-[10px] px-2.5 py-1.5 rounded-full bg-forest-800 text-forest-300 border border-forest-600/40 hover:border-mushroom-500/40 touch-manipulation whitespace-nowrap disabled:opacity-50"
-            >
-              {prompt.length > 42 ? `${prompt.slice(0, 40)}…` : prompt}
-            </button>
-          ))}
-        </div>
+        {!compact && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {SUGGESTED_CHAT_PROMPTS.slice(0, 4).map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => submit(prompt)}
+                disabled={inputDisabled}
+                className="shrink-0 text-[10px] px-2.5 py-1.5 rounded-full bg-forest-800 text-forest-300 border border-forest-600/40 hover:border-mushroom-500/40 touch-manipulation whitespace-nowrap disabled:opacity-50"
+              >
+                {prompt.length > 36 ? `${prompt.slice(0, 34)}…` : prompt}
+              </button>
+            ))}
+          </div>
+        )}
 
         <form
           onSubmit={(e) => {
@@ -147,18 +161,28 @@ export default function MushroomChatPanel({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Es. dove trovo porcini domani a 30 km da Benevento?"
-            disabled={loading}
-            className="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-forest-950 border border-forest-600/50 text-sm text-forest-100 placeholder:text-forest-500 focus:outline-none focus:border-mushroom-500/50 disabled:opacity-60"
+            placeholder="Dove trovo porcini oggi?"
+            disabled={inputDisabled}
+            className="flex-1 min-w-0 px-3 py-3 rounded-xl bg-forest-950 border border-forest-600/50 text-sm text-forest-100 placeholder:text-forest-500 focus:outline-none focus:border-mushroom-500/50 disabled:opacity-60"
           />
           <button
             type="submit"
-            disabled={loading || !input.trim()}
-            className="shrink-0 px-4 py-2.5 rounded-xl bg-mushroom-600 hover:bg-mushroom-500 text-white font-semibold text-sm disabled:opacity-40 touch-manipulation"
+            disabled={inputDisabled || !input.trim()}
+            className="shrink-0 px-4 py-3 rounded-xl bg-mushroom-600 hover:bg-mushroom-500 text-white font-semibold text-sm disabled:opacity-40 touch-manipulation"
           >
             Invia
           </button>
         </form>
+        {geminiLoading && !loading && (
+          <p className="text-[10px] text-forest-500 text-center">
+            Mastro Fungaiolo sta commentando — puoi già usare le schede sopra
+          </p>
+        )}
+        {busy && compact && (
+          <p className="text-[9px] text-forest-600 text-center">
+            {loading ? "Analisi istantanea…" : "Commento in arrivo…"}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -233,19 +257,41 @@ function MessageBubble({
           <div className="flex items-center justify-between gap-2 mb-1">
             <p className="text-[10px] text-mushroom-400 font-semibold min-w-0">
               🍄{" "}
-              {message.poweredBy === "gemini"
-                ? "Mastro Fungaiolo"
-                : "Assistente Radar"}
-              {message.poweredBy === "gemini" && (
+              {message.geminiPending
+                ? "Radar live"
+                : message.poweredBy === "gemini"
+                  ? "Mastro Fungaiolo"
+                  : "Assistente Radar"}
+              {message.poweredBy === "gemini" && !message.geminiPending && (
                 <span className="text-forest-500 font-normal"> · Gemini</span>
               )}
             </p>
             <CopyMessageButton text={message.content} />
           </div>
         )}
+        {message.studyWindow && (
+          <p className="text-[9px] text-forest-500 mb-1">
+            Studio {message.studyWindow}
+            {message.dataAsOf
+              ? ` · dati ${new Date(message.dataAsOf).toLocaleString("it-IT", {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}`
+              : ""}
+          </p>
+        )}
         <div className="text-xs leading-relaxed whitespace-pre-wrap select-text">
           <FormattedText text={message.content} />
         </div>
+
+        {message.geminiPending && (
+          <div className="flex items-center gap-2 mt-2 text-[10px] text-forest-500">
+            <span className="w-3 h-3 border-2 border-mushroom-400/70 border-t-transparent rounded-full animate-spin" />
+            Mastro sta elaborando il commento…
+          </div>
+        )}
 
         {message.results && message.results.length > 0 && (
           <div className="mt-2 space-y-1.5">
@@ -386,6 +432,7 @@ function ZoneResultCard({
           </p>
           <p className="text-forest-500">
             {result.speciesLabel} · {result.dateLabel}
+            {result.hourRangeLabel ? ` · ${result.hourRangeLabel}` : ""}
           </p>
         </div>
         <span
@@ -395,24 +442,22 @@ function ZoneResultCard({
         </span>
       </div>
       <p className="text-forest-400 mt-1">
-        📍 {result.km} km · ⏱ {result.driveMinutes} min · 🌲 {result.altitude}{" "}
-        m
+        📍 {result.km} km · ⏱ {result.driveMinutes} min · 🌲 {result.altitude} m
       </p>
-      <p className="text-forest-500 truncate">{result.forestType}</p>
-      <p className="text-forest-500 text-[10px] mt-0.5 leading-snug">
-        🅿️ {result.parkingLabel}: <span className="font-mono">{result.coords}</span>
+      <p className="text-forest-500 text-[10px] font-mono leading-snug">
+        🅿️ Parcheggio: {result.coords}
       </p>
-      <p className="text-forest-600 text-[10px] font-mono">
-        🌲 Raccolta: {result.foragingCoords} · {result.altitude} m
+      <p className="text-forest-500 text-[10px] font-mono leading-snug">
+        🌲 Raccolta: {result.foragingCoords}
       </p>
       <div className="flex flex-wrap gap-2 mt-2">
         {onSelect && (
           <button
             type="button"
             onClick={() => onSelect(result)}
-            className="text-[10px] px-2 py-1 rounded bg-mushroom-600/30 text-mushroom-300 touch-manipulation"
+            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-mushroom-600/40 text-mushroom-200 touch-manipulation font-medium"
           >
-            Mostra in mappa
+            Mappa
           </button>
         )}
         <a
@@ -421,7 +466,7 @@ function ZoneResultCard({
           rel="noopener noreferrer"
           className="text-[10px] px-2 py-1 rounded bg-forest-800 text-forest-300 touch-manipulation"
         >
-          🅿️ Parcheggio
+          Maps 🅿️
         </a>
         <a
           href={result.mapsForagingUrl}
@@ -429,8 +474,28 @@ function ZoneResultCard({
           rel="noopener noreferrer"
           className="text-[10px] px-2 py-1 rounded bg-teal-900/50 text-teal-200 touch-manipulation"
         >
-          🌲 Area raccolta
+          Maps 🌲
         </a>
+        {result.earthForagingUrl && (
+          <a
+            href={result.earthForagingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] px-2 py-1 rounded bg-blue-900/50 text-blue-200 touch-manipulation"
+          >
+            Earth 🌲
+          </a>
+        )}
+        {result.earthParkingUrl && (
+          <a
+            href={result.earthParkingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] px-2 py-1 rounded bg-blue-900/40 text-blue-200/90 touch-manipulation"
+          >
+            Earth 🅿️
+          </a>
+        )}
       </div>
     </div>
   );

@@ -10,7 +10,10 @@
     "verify:gemini": "node scripts/verify-gemini.mjs",
     "verify:positions": "node scripts/simulate-positions.mjs",
     "verify:sources": "node scripts/verify-source-urls.mjs",
-    "verify:compass": "node scripts/verify-compass.mjs"
+    "verify:compass": "node scripts/verify-compass.mjs",
+    "verify:chat-map": "npx tsx scripts/verify-chat-map.ts",
+    "verify:gps": "npx tsx scripts/verify-gps-links.ts",
+    "verify:chat-followup": "npx tsx scripts/verify-chat-followup.ts"
   },
   "dependencies": {
     "@google/genai": "^2.9.0",

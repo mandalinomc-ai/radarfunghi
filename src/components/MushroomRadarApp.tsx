@@ -23,7 +23,7 @@ import {
 
 } from "@/lib/mapUtils";
 
-import { type HourRange } from "@/lib/timeRange";
+import { formatHourRange, type HourRange } from "@/lib/timeRange";
 
 import {
 
@@ -274,7 +274,9 @@ export default function MushroomRadarApp() {
 
     refresh,
 
-  } = useLiveZones(FUNGAL_ZONES, criteria.selectedDate);
+  } = useLiveZones(FUNGAL_ZONES, criteria.selectedDate, {
+    pauseRefresh: chatOpen || mobilePanel === "chat",
+  });
 
   const confirmOrigin = useCallback(
     (origin: GeoPoint) => {
@@ -367,10 +369,10 @@ export default function MushroomRadarApp() {
     [liveZones, filteredHotspots, criteria, rangeKm, lastUpdate, liveData]
   );
 
-  const { messages, loading: chatLoading, sendMessage, clearChat } =
+  const { messages, loading: chatLoading, geminiLoading, sendMessage, clearChat } =
     useMushroomChat(chatContext, {
       onRecommendedZone: (zoneId) => {
-        const match = hotspots.find((h) => h.zone.id === zoneId);
+        const match = filteredHotspots.find((h) => h.zone.id === zoneId);
         if (match) {
           setSelectedHotspot(match);
           setSelectedReport(null);
@@ -905,21 +907,15 @@ export default function MushroomRadarApp() {
       >
 
         <MushroomChatPanel
-
           messages={messages}
-
           loading={chatLoading}
-
+          geminiLoading={geminiLoading}
+          studyWindowLabel={formatHourRange(criteria.hourRange)}
           onSend={sendMessage}
-
           onClear={clearChat}
-
           onZoneSelect={handleChatZoneSelect}
-
           compact
-
-          className="min-h-[50dvh]"
-
+          className="min-h-0 flex-1"
         />
 
       </MobileSheet>
@@ -1058,7 +1054,7 @@ export default function MushroomRadarApp() {
 
                 <p className="text-[10px] text-forest-500">
 
-                  Meteo live · oggi e domani
+                  Fascia {formatHourRange(criteria.hourRange)} · % come in mappa
                 </p>
 
               </div>
@@ -1082,19 +1078,14 @@ export default function MushroomRadarApp() {
             <div className="flex-1 p-4 min-h-0 overflow-hidden flex flex-col">
 
               <MushroomChatPanel
-
                 messages={messages}
-
                 loading={chatLoading}
-
+                geminiLoading={geminiLoading}
+                studyWindowLabel={formatHourRange(criteria.hourRange)}
                 onSend={sendMessage}
-
                 onClear={clearChat}
-
                 onZoneSelect={handleChatZoneSelect}
-
                 className="flex-1"
-
               />
 
             </div>

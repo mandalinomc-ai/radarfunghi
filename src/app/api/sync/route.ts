@@ -5,7 +5,11 @@ import { readWeatherCache } from "@/lib/weatherCache";
 import { CLIENT_AUTO_REFRESH_MS, SERVER_CRON_INTERVAL_MIN } from "@/lib/constants";
 import { getAllReports } from "@/lib/reportStore";
 import { getAllZoneReliability } from "@/lib/zoneReliabilityStore";
-import { getSharedCitizenSnapshot } from "@/lib/crossSourceIntel";
+import {
+  computeAllZoneCrossMultipliers,
+  getSharedCitizenSnapshot,
+} from "@/lib/crossSourceIntel";
+import { FUNGAL_ZONES } from "@/lib/mockData";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +48,10 @@ export async function GET(request: NextRequest) {
   const reports = await getAllReports().catch(() => []);
   const zoneReliability = await getAllZoneReliability().catch(() => []);
   const citizenScience = await getSharedCitizenSnapshot(force).catch(() => null);
+  const crossMultipliers = computeAllZoneCrossMultipliers(
+    FUNGAL_ZONES,
+    citizenScience
+  );
   const fetchedAt =
     (weatherPayload?.fetchedAt as string) ?? new Date().toISOString();
   const ageMin = Math.round(
@@ -117,6 +125,7 @@ export async function GET(request: NextRequest) {
           observationCount: citizenScience.observations.length,
         }
       : null,
+    crossMultipliers,
     autoRefreshMs: CLIENT_AUTO_REFRESH_MS,
     serverCronMinutes: SERVER_CRON_INTERVAL_MIN,
     nextClientRefreshAt: new Date(

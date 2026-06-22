@@ -3,9 +3,11 @@ import type { ProbabilityLevel } from "./mapUtils";
 import { buildHotspots, getSpeciesLabel } from "./predictionEngine";
 import {
   formatCoordinates,
+  getGoogleEarthPinLink,
   getGoogleMapsForagingLink,
   getGoogleMapsParkingLink,
   getProbabilityLevel,
+  roundCoord,
 } from "./mapUtils";
 import { formatDateLabel } from "./dateUtils";
 import { VERIFIED_ZONE_BY_ID } from "./verifiedZoneCoords";
@@ -30,11 +32,17 @@ export interface ChatZoneResult {
   mapsUrl: string;
   mapsParkingUrl: string;
   mapsForagingUrl: string;
+  earthParkingUrl: string;
+  earthForagingUrl: string;
   parkingLabel: string;
   coords: string;
   foragingCoords: string;
   date: string;
   dateLabel: string;
+  /** Fascia oraria dello studio Sprout Score */
+  hourRangeLabel?: string;
+  /** Timestamp meteo usato per il calcolo */
+  dataAsOf?: string;
 }
 
 export function getParkingLabel(zoneId: string, zoneName: string): string {
@@ -51,12 +59,17 @@ export function hotspotToChatZoneResult(
   hotspot: MapHotspot,
   species: MushroomSpecies,
   date: string,
-  scoreOverride?: number
+  scoreOverride?: number,
+  meta?: { hourRangeLabel?: string; dataAsOf?: string }
 ): ChatZoneResult {
   const { zone } = hotspot;
   const pred = hotspot.predictions.find((p) => p.species === species);
   const score = scoreOverride ?? pred?.score ?? hotspot.activeScore;
   const parkingLabel = getParkingLabel(zone.id, zone.name);
+  const parkingLat = roundCoord(zone.parkingLat);
+  const parkingLng = roundCoord(zone.parkingLng);
+  const foragingLat = roundCoord(zone.lat);
+  const foragingLng = roundCoord(zone.lng);
 
   return {
     zoneId: zone.id,
@@ -68,33 +81,29 @@ export function hotspotToChatZoneResult(
     level: getProbabilityLevel(score),
     km: zone.kmFromBenevento,
     driveMinutes: zone.driveMinutesFromBenevento,
-    lat: zone.lat,
-    lng: zone.lng,
-    parkingLat: zone.parkingLat,
-    parkingLng: zone.parkingLng,
+    lat: foragingLat,
+    lng: foragingLng,
+    parkingLat,
+    parkingLng,
     altitude: zone.altitude,
     forestType: zone.forestType,
-    mapsUrl: getGoogleMapsParkingLink(
-      zone.parkingLat,
-      zone.parkingLng,
-      parkingLabel
-    ),
-    mapsParkingUrl: getGoogleMapsParkingLink(
-      zone.parkingLat,
-      zone.parkingLng,
-      parkingLabel
-    ),
+    mapsUrl: getGoogleMapsParkingLink(parkingLat, parkingLng, parkingLabel),
+    mapsParkingUrl: getGoogleMapsParkingLink(parkingLat, parkingLng, parkingLabel),
     mapsForagingUrl: getGoogleMapsForagingLink(
-      zone.lat,
-      zone.lng,
+      foragingLat,
+      foragingLng,
       zone.name,
       zone.altitude
     ),
+    earthParkingUrl: getGoogleEarthPinLink(parkingLat, parkingLng),
+    earthForagingUrl: getGoogleEarthPinLink(foragingLat, foragingLng),
     parkingLabel,
-    coords: formatCoordinates(zone.parkingLat, zone.parkingLng),
-    foragingCoords: formatCoordinates(zone.lat, zone.lng),
+    coords: formatCoordinates(parkingLat, parkingLng),
+    foragingCoords: formatCoordinates(foragingLat, foragingLng),
     date,
     dateLabel: formatDateLabel(date),
+    hourRangeLabel: meta?.hourRangeLabel,
+    dataAsOf: meta?.dataAsOf,
   };
 }
 
@@ -103,19 +112,31 @@ export function collectChatResultsFromHotspots(
   species: MushroomSpecies | "all",
   date: string,
   minScore: number,
-  limit = 8
+  limit = 8,
+  meta?: { hourRangeLabel?: string; dataAsOf?: string }
 ): ChatZoneResult[] {
-  const speciesList: MushroomSpecies[] =
-    species === "all" ? ["porcino", "estatino", "galletto"] : [species];
+  if (species === "all") {
+    return hotspots
+      .filter((h) => h.activeScore >= minScore)
+      .map((h) =>
+        hotspotToChatZoneResult(
+          h,
+          h.activeSpecies,
+          date,
+          h.activeScore,
+          meta
+        )
+      )
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  }
 
   const results: ChatZoneResult[] = [];
 
-  for (const sp of speciesList) {
-    for (const h of hotspots) {
-      const pred = h.predictions.find((p) => p.species === sp);
-      if (!pred || pred.score < minScore) continue;
-      results.push(hotspotToChatZoneResult(h, sp, date, pred.score));
-    }
+  for (const h of hotspots) {
+    const pred = h.predictions.find((p) => p.species === species);
+    if (!pred || pred.score < minScore) continue;
+    results.push(hotspotToChatZoneResult(h, species, date, pred.score, meta));
   }
 
   return results.sort((a, b) => b.score - a.score).slice(0, limit);

@@ -109,33 +109,72 @@ export function getGoogleMapsDeepLink(
   return getGoogleMapsParkingLink(destLat, destLng);
 }
 
-/** Navigazione stradale al parcheggio base (coordinate GPS). */
+/** Decimali GPS — identici in UI, Maps e Earth (~1 m) */
+export const COORD_DECIMALS = 5;
+
+export function roundCoord(value: number): number {
+  const f = 10 ** COORD_DECIMALS;
+  return Math.round(value * f) / f;
+}
+
+export interface GpsLinkBundle {
+  lat: number;
+  lng: number;
+  display: string;
+  copyPaste: string;
+  mapsPin: string;
+  mapsDir: string;
+  earthPin: string;
+  geoUri: string;
+}
+
+/** Coordinate + link allineati Maps / Earth / geo URI */
+export function buildGpsLinks(lat: number, lng: number): GpsLinkBundle {
+  const la = roundCoord(lat);
+  const ln = roundCoord(lng);
+  const pair = `${la.toFixed(COORD_DECIMALS)},${ln.toFixed(COORD_DECIMALS)}`;
+  const display = `${la.toFixed(COORD_DECIMALS)}, ${ln.toFixed(COORD_DECIMALS)}`;
+  return {
+    lat: la,
+    lng: ln,
+    display,
+    copyPaste: display,
+    mapsPin: `https://www.google.com/maps/search/?api=1&query=${pair}`,
+    mapsDir: `https://www.google.com/maps/dir/?api=1&destination=${pair}&travelmode=driving`,
+    earthPin: `https://earth.google.com/web/search/${pair}`,
+    geoUri: `geo:${pair}?q=${pair}`,
+  };
+}
+
+/** Navigazione stradale al parcheggio base (coordinate GPS esatte). */
 export function getGoogleMapsParkingLink(
   lat: number,
   lng: number,
   _label?: string
 ): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+  return buildGpsLinks(lat, lng).mapsDir;
 }
 
-/** Pin area raccolta / macchia boschiva (quota alta). */
+/** Pin esatto area raccolta — stesso punto su Maps e Earth */
 export function getGoogleMapsForagingLink(
   lat: number,
   lng: number,
-  zoneName: string,
-  altitude?: number
+  _zoneName?: string,
+  _altitude?: number
 ): string {
-  const alt = altitude ? ` ${altitude}m` : "";
-  const query = encodeURIComponent(`${zoneName}${alt} ${lat.toFixed(5)},${lng.toFixed(5)}`);
-  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+  return buildGpsLinks(lat, lng).mapsPin;
 }
 
 export function getGoogleMapsPinLink(lat: number, lng: number): string {
-  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  return buildGpsLinks(lat, lng).mapsPin;
+}
+
+export function getGoogleEarthPinLink(lat: number, lng: number): string {
+  return buildGpsLinks(lat, lng).earthPin;
 }
 
 export function formatCoordinates(lat: number, lng: number): string {
-  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  return buildGpsLinks(lat, lng).display;
 }
 
 export const SPECIES_COLORS: Record<MushroomSpecies, string> = {
