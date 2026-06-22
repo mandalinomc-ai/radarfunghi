@@ -36,5 +36,8 @@ yarn-error.log*
 next-env.d.ts
 .vercel
 
+# cesium runtime assets (generati da postinstall)
+/public/cesium/
+
 # user reports (local dev storage)
 /data/

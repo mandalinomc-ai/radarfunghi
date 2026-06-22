@@ -13,11 +13,13 @@
     "verify:compass": "node scripts/verify-compass.mjs",
     "verify:chat-map": "npx tsx scripts/verify-chat-map.ts",
     "verify:gps": "npx tsx scripts/verify-gps-links.ts",
-    "verify:chat-followup": "npx tsx scripts/verify-chat-followup.ts"
+    "verify:chat-followup": "npx tsx scripts/verify-chat-followup.ts",
+    "postinstall": "node scripts/copy-cesium-assets.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.9.0",
     "@vercel/blob": "^2.4.0",
+    "cesium": "^1.142.0",
     "chart.js": "^4.5.1",
     "leaflet": "^1.9.4",
     "next": "^15.1.0",

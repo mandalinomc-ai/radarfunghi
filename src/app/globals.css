@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import "leaflet/dist/leaflet.css";
+@import "cesium/Build/Cesium/Widgets/widgets.css";
 
 :root {
   --background: #0a1209;
@@ -166,6 +167,37 @@ body {
 
 .leaflet-control-attribution a {
   color: #7ab872 !important;
+}
+
+/* Cesium 3D globe */
+.mushroom-map-3d .cesium-viewer,
+.mushroom-map-3d .cesium-widget,
+.mushroom-map-3d .cesium-widget canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.mushroom-map-3d .cesium-viewer-toolbar {
+  top: 52px;
+  right: 8px;
+}
+
+.mushroom-map-3d .cesium-sceneModePicker-wrapper {
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(10, 18, 9, 0.88);
+  border: 1px solid rgba(90, 143, 84, 0.35);
+}
+
+.mushroom-map-3d .cesium-button {
+  background: rgba(20, 35, 18, 0.95);
+  border-color: rgba(90, 143, 84, 0.35);
+  color: #c8e6c3;
+}
+
+.mushroom-map-3d .cesium-button:hover {
+  background: rgba(36, 61, 34, 0.95);
+  color: #f59a4a;
 }
 
 .scrollbar-none {
