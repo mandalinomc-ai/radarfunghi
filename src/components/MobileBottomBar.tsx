@@ -13,6 +13,7 @@ interface MobileDockToolbarProps {
   onOpenSources: () => void;
   onOpenFM: () => void;
   onOpenLegend: () => void;
+  onOpenPatentino: () => void;
   reportCount?: number;
   spyZoneCount?: number;
   pendingCount?: number;
@@ -30,6 +31,7 @@ export function MobileDockToolbar({
   onOpenSources,
   onOpenFM,
   onOpenLegend,
+  onOpenPatentino,
   reportCount = 0,
   spyZoneCount = 0,
   pendingCount = 0,
@@ -70,6 +72,7 @@ export function MobileDockToolbar({
           <DockBtn onClick={onOpenSources} icon="📊" label="Fonti" compact />
           <DockBtn onClick={onOpenFM} icon="📡" label="FM" compact />
           <DockBtn onClick={onOpenLegend} icon="🗺️" label="Legenda" compact />
+          <DockBtn onClick={onOpenPatentino} icon="🪪" label="Patentino" compact />
         </div>
       )}
     </div>

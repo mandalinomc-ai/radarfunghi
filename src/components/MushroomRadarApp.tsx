@@ -89,6 +89,7 @@ const WeatherSpyRadarPanel = dynamic(() => import("./WeatherSpyRadarPanel"), {
 });
 
 import CompassGuidePanel from "./CompassGuidePanel";
+import PatentinoGuidePanel from "./PatentinoGuidePanel";
 import { useSpyZones } from "@/hooks/useSpyZones";
 import ReportDetailPanel from "./ReportDetailPanel";
 import MushroomChatPanel from "./MushroomChatPanel";
@@ -149,7 +150,7 @@ const MushroomMap = dynamic(() => import("./MushroomMap"), {
 
 
 
-type MobilePanel = "fm" | "legend" | "sources" | "chat" | "filters" | "cityPreview" | "compass" | "weatherSpy" | null;
+type MobilePanel = "fm" | "legend" | "sources" | "chat" | "filters" | "cityPreview" | "compass" | "weatherSpy" | "patentino" | null;
 
 
 
@@ -780,6 +781,7 @@ export default function MushroomRadarApp() {
         hasBestHotspot={!!bestHotspot && bestHotspot.activeScore >= 28}
 
         onOpenFilters={() => setMobilePanel("filters")}
+        onOpenPatentino={() => setMobilePanel("patentino")}
 
         mobileToolbar={
           <MobileDockToolbar
@@ -793,6 +795,7 @@ export default function MushroomRadarApp() {
             onOpenSources={() => setMobilePanel("sources")}
             onOpenFM={() => setMobilePanel("fm")}
             onOpenLegend={() => setMobilePanel("legend")}
+            onOpenPatentino={() => setMobilePanel("patentino")}
             reportCount={userReports.length}
             spyZoneCount={spyZones.length}
             pendingCount={pendingCount}
@@ -809,6 +812,7 @@ export default function MushroomRadarApp() {
         onOpenWeatherSpy={() => setMobilePanel("weatherSpy")}
         onOpenGuide={openBeginnerGuide}
         onOpenLegend={() => setMobilePanel("legend")}
+        onOpenPatentino={() => setMobilePanel("patentino")}
         reportCount={userReports.length}
         spyZoneCount={spyZones.length}
         pendingCount={pendingCount}
@@ -1011,6 +1015,14 @@ export default function MushroomRadarApp() {
           origin={criteria.origin}
           originName={criteria.origin.name}
         />
+      </MobileSheet>
+
+      <MobileSheet
+        open={mobilePanel === "patentino"}
+        onClose={() => setMobilePanel(null)}
+        title="Patentino / Tesserino funghi"
+      >
+        <PatentinoGuidePanel />
       </MobileSheet>
 
       <MobileSheet

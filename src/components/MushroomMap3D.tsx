@@ -3,20 +3,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadCesium, resetCesiumLoader, type CesiumRuntime } from "@/lib/loadCesium";
 import {
-  addMapLabelLayers,
+  addTerrainVisualLayers,
+  applyGameCameraRules,
   attachQualityOnCameraMove,
   configureGlobeRendering,
   createSatelliteImageryProvider,
-  GROUND_PIN_OFFSET_M,
-  groundPinHeightReference,
-  labelScaleByDistance,
-  markerScaleByDistance,
+  createWorldTerrain,
 } from "@/lib/cesiumMapConfig";
-import type { Viewer, Entity, ScreenSpaceEventHandler, TerrainProvider } from "cesium";
+import {
+  buildHotspotMarkerEntity,
+  buildHotspotTerritoryEntity,
+  buildRegionBadgeEntity,
+  computeRegionCentroids,
+  REGION_LABELS,
+  REGION_TERRITORY_COLORS,
+} from "@/lib/cesiumZoneVisuals";
+import type { ImageryLayer, Viewer, Entity, ScreenSpaceEventHandler, TerrainProvider } from "cesium";
 import type { MapHotspot, MushroomReport, SpyZoneMarker } from "@/lib/types";
-import { SPECIES_COLORS } from "@/lib/mapUtils";
 import { BENEVENTO } from "@/lib/benevento";
-import { getSpeciesLabel } from "@/lib/predictionEngine";
 import { safeMapCoordinatesForTier } from "@/lib/tierUtils";
 import { getHotspotMapCenter } from "@/lib/zoneCoordinateService";
 import type { MushroomMapProps } from "./map/mushroomMapProps";
@@ -26,11 +30,11 @@ interface HotspotEntity extends Entity {
 }
 
 function cameraHeightForRange(rangeKm: number): number {
-  return Math.max(25_000, rangeKm * 1200);
+  return Math.max(18_000, rangeKm * 900);
 }
 
 function flyHeightForHotspot(altitude: number): number {
-  return Math.max(altitude + 450, 750);
+  return Math.max(altitude + 800, 1400);
 }
 
 export default function MushroomMap3D({
@@ -52,6 +56,8 @@ export default function MushroomMap3D({
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
   const cesiumRef = useRef<CesiumRuntime | null>(null);
+  const labelLayersRef = useRef<ImageryLayer[]>([]);
+  const selectedZoneRef = useRef<string | null>(selectedZoneId);
   const handlerRef = useRef<ScreenSpaceEventHandler | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const detachCameraRef = useRef<(() => void) | null>(null);
@@ -60,6 +66,8 @@ export default function MushroomMap3D({
   const onSpyZoneClickRef = useRef(onSpyZoneClick);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+
+  selectedZoneRef.current = selectedZoneId;
 
   const retryLoad = useCallback(() => {
     resetCesiumLoader();
@@ -86,16 +94,11 @@ export default function MushroomMap3D({
 
         const imageryProvider = await createSatelliteImageryProvider(Cesium);
 
-        let terrainProvider: TerrainProvider =
-          new Cesium.EllipsoidTerrainProvider();
         let hasTerrain = false;
+        let terrainProvider: TerrainProvider = new Cesium.EllipsoidTerrainProvider();
         if (ionToken) {
-          try {
-            terrainProvider = await Cesium.createWorldTerrainAsync();
-            hasTerrain = true;
-          } catch {
-            /* ellipsoid */
-          }
+          terrainProvider = await createWorldTerrain(Cesium);
+          hasTerrain = !(terrainProvider instanceof Cesium.EllipsoidTerrainProvider);
         }
 
         cesiumRef.current = Cesium;
@@ -118,13 +121,14 @@ export default function MushroomMap3D({
         });
 
         viewer.imageryLayers.addImageryProvider(imageryProvider);
-        await addMapLabelLayers(viewer, Cesium);
+        const { labelLayers } = await addTerrainVisualLayers(viewer, Cesium);
+        labelLayersRef.current = labelLayers;
         configureGlobeRendering(viewer, Cesium, hasTerrain);
 
-        viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#0a1209");
-        viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#1a2e18");
+        viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#87ceeb");
+        viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#1a3d2e");
 
-        viewer.camera.flyTo({
+        viewer.camera.setView({
           destination: Cesium.Cartesian3.fromDegrees(
             origin.lng,
             origin.lat,
@@ -132,10 +136,9 @@ export default function MushroomMap3D({
           ),
           orientation: {
             heading: 0,
-            pitch: Cesium.Math.toRadians(-48),
+            pitch: Cesium.Math.toRadians(-52),
             roll: 0,
           },
-          duration: 0,
         });
 
         const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -144,11 +147,17 @@ export default function MushroomMap3D({
             const picked = viewer.scene.pick(click.position);
             if (!Cesium.defined(picked) || !picked.id) return;
             const entity = picked.id as HotspotEntity & {
+              id?: string;
               reportData?: MushroomReport;
               spyData?: SpyZoneMarker;
             };
+            const entityId = entity.id?.toString() ?? "";
             if (entity.hotspotData) {
               onHotspotClickRef.current(entity.hotspotData);
+            } else if (entityId.startsWith("territory-")) {
+              const zoneId = entityId.replace("territory-", "");
+              const match = hotspots.find((h) => h.zone.id === zoneId);
+              if (match) onHotspotClickRef.current(match);
             } else if (entity.reportData && onReportClickRef.current) {
               onReportClickRef.current(entity.reportData);
             } else if (entity.spyData && onSpyZoneClickRef.current) {
@@ -164,7 +173,9 @@ export default function MushroomMap3D({
         detachCameraRef.current = attachQualityOnCameraMove(
           viewer,
           onMoveStart,
-          onMoveEnd
+          onMoveEnd,
+          labelLayersRef.current,
+          () => selectedZoneRef.current
         );
 
         viewer.resize();
@@ -189,6 +200,7 @@ export default function MushroomMap3D({
       detachCameraRef.current = null;
       handlerRef.current?.destroy();
       handlerRef.current = null;
+      labelLayersRef.current = [];
       if (viewerRef.current && !viewerRef.current.isDestroyed()) {
         viewerRef.current.destroy();
       }
@@ -203,50 +215,42 @@ export default function MushroomMap3D({
     const Cesium = cesiumRef.current;
     if (!viewer || !Cesium || viewer.isDestroyed()) return;
 
-    const pinRef = groundPinHeightReference(Cesium);
-    const pinScale = markerScaleByDistance(Cesium);
-    const lblScale = labelScaleByDistance(Cesium);
-    const alwaysOnTop = Number.POSITIVE_INFINITY;
+    const clamp = Cesium.HeightReference.CLAMP_TO_GROUND;
 
     viewer.entities.removeAll();
 
     viewer.entities.add({
       id: "origin",
-      position: Cesium.Cartesian3.fromDegrees(origin.lng, origin.lat, GROUND_PIN_OFFSET_M),
+      position: Cesium.Cartesian3.fromDegrees(origin.lng, origin.lat),
       point: {
-        pixelSize: 12,
+        pixelSize: 14,
         color: Cesium.Color.fromCssColorString("#3b82f6"),
         outlineColor: Cesium.Color.WHITE,
-        outlineWidth: 2,
-        heightReference: pinRef,
-        scaleByDistance: pinScale,
-        disableDepthTestDistance: alwaysOnTop,
+        outlineWidth: 3,
+        heightReference: clamp,
       },
       label: {
         text: origin.name || "Partenza",
-        font: "600 11px system-ui, sans-serif",
+        font: "bold 12px system-ui, sans-serif",
         fillColor: Cesium.Color.WHITE,
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 2,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        pixelOffset: new Cesium.Cartesian2(0, -16),
-        heightReference: pinRef,
-        scaleByDistance: lblScale,
-        disableDepthTestDistance: alwaysOnTop,
+        pixelOffset: new Cesium.Cartesian2(0, -18),
+        heightReference: clamp,
         showBackground: true,
-        backgroundColor: Cesium.Color.fromCssColorString("#0f1a12").withAlpha(0.75),
-        backgroundPadding: new Cesium.Cartesian2(6, 4),
+        backgroundColor: Cesium.Color.fromCssColorString("#0a1209").withAlpha(0.85),
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 60_000),
       },
       ellipse: {
         semiMajorAxis: rangeKm * 1000,
         semiMinorAxis: rangeKm * 1000,
-        material: Cesium.Color.fromCssColorString("#3b82f6").withAlpha(0.06),
+        material: Cesium.Color.fromCssColorString("#3b82f6").withAlpha(0.05),
         outline: true,
-        outlineColor: Cesium.Color.fromCssColorString("#3b82f6").withAlpha(0.45),
+        outlineColor: Cesium.Color.fromCssColorString("#60a5fa").withAlpha(0.55),
         outlineWidth: 2,
-        heightReference: pinRef,
-        height: 0,
+        heightReference: clamp,
       },
     });
 
@@ -260,66 +264,43 @@ export default function MushroomMap3D({
         hotspot.zone.parkingLng
       );
       const isSelected = hotspot.zone.id === selectedZoneId;
-      const color = SPECIES_COLORS[hotspot.activeSpecies];
-      const speciesLabel = getSpeciesLabel(hotspot.activeSpecies);
-      const footprintM = isSelected ? 60 : 42;
+      const opts = { lat, lng, hotspot, isSelected };
 
-      const entity = viewer.entities.add({
-        id: `hotspot-${hotspot.zone.id}`,
-        position: Cesium.Cartesian3.fromDegrees(lng, lat, GROUND_PIN_OFFSET_M),
-        ellipse: {
-          semiMajorAxis: footprintM,
-          semiMinorAxis: footprintM,
-          material: Cesium.Color.fromCssColorString(color).withAlpha(
-            isSelected ? 0.45 : 0.3
-          ),
-          outline: true,
-          outlineColor: Cesium.Color.fromCssColorString(color).withAlpha(0.9),
-          outlineWidth: isSelected ? 3 : 2,
-          heightReference: pinRef,
-          height: 0,
-        },
-        point: {
-          pixelSize: isSelected ? 18 : 14,
-          color: Cesium.Color.fromCssColorString(color),
-          outlineColor: isSelected ? Cesium.Color.WHITE : Cesium.Color.BLACK,
-          outlineWidth: isSelected ? 3 : 2,
-          heightReference: pinRef,
-          scaleByDistance: pinScale,
-          disableDepthTestDistance: alwaysOnTop,
-        },
-        label: {
-          text: `${hotspot.zone.name}\n${hotspot.activeScore}% · ${speciesLabel}`,
-          font: "600 12px system-ui, sans-serif",
-          fillColor: Cesium.Color.WHITE,
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 2,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-          pixelOffset: new Cesium.Cartesian2(0, -18),
-          heightReference: pinRef,
-          scaleByDistance: lblScale,
-          disableDepthTestDistance: alwaysOnTop,
-          showBackground: true,
-          backgroundColor: Cesium.Color.fromCssColorString("#0f1a12").withAlpha(0.78),
-          backgroundPadding: new Cesium.Cartesian2(8, 5),
-        },
-      }) as HotspotEntity;
-      entity.hotspotData = hotspot;
+      const territory = viewer.entities.add(
+        buildHotspotTerritoryEntity(Cesium, opts)
+      );
+      (territory as HotspotEntity).hotspotData = hotspot;
+
+      const marker = viewer.entities.add(
+        buildHotspotMarkerEntity(Cesium, opts)
+      ) as HotspotEntity;
+      marker.hotspotData = hotspot;
+    }
+
+    const centroids = computeRegionCentroids(hotspots);
+    for (const [region, c] of Object.entries(centroids)) {
+      if (!c) continue;
+      viewer.entities.add(
+        buildRegionBadgeEntity(
+          Cesium,
+          region as MapHotspot["zone"]["region"],
+          c.lat,
+          c.lng,
+          c.count
+        )
+      );
     }
 
     for (const report of userReports) {
       const entity = viewer.entities.add({
         id: `report-${report.id}`,
-        position: Cesium.Cartesian3.fromDegrees(report.lng, report.lat, GROUND_PIN_OFFSET_M),
+        position: Cesium.Cartesian3.fromDegrees(report.lng, report.lat),
         point: {
           pixelSize: report.id === selectedReportId ? 14 : 10,
           color: Cesium.Color.fromCssColorString("#f472b6"),
           outlineColor: Cesium.Color.WHITE,
           outlineWidth: 2,
-          heightReference: pinRef,
-          scaleByDistance: pinScale,
-          disableDepthTestDistance: alwaysOnTop,
+          heightReference: clamp,
         },
       }) as Entity & { reportData?: MushroomReport };
       entity.reportData = report;
@@ -328,32 +309,28 @@ export default function MushroomMap3D({
     for (const zone of spyZones) {
       const entity = viewer.entities.add({
         id: `spy-${zone.id}`,
-        position: Cesium.Cartesian3.fromDegrees(zone.lng, zone.lat, GROUND_PIN_OFFSET_M),
+        position: Cesium.Cartesian3.fromDegrees(zone.lng, zone.lat),
         point: {
           pixelSize: zone.id === selectedSpyZoneId ? 14 : 10,
           color: Cesium.Color.fromCssColorString("#a78bfa"),
           outlineColor: Cesium.Color.WHITE,
           outlineWidth: 2,
-          heightReference: pinRef,
-          scaleByDistance: pinScale,
-          disableDepthTestDistance: alwaysOnTop,
-        },
-        label: {
-          text: zone.label,
-          font: "500 10px system-ui, sans-serif",
-          fillColor: Cesium.Color.fromCssColorString("#e9d5ff"),
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 2,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-          pixelOffset: new Cesium.Cartesian2(0, -12),
-          heightReference: pinRef,
-          scaleByDistance: lblScale,
-          disableDepthTestDistance: alwaysOnTop,
+          heightReference: clamp,
         },
       }) as Entity & { spyData?: SpyZoneMarker };
       entity.spyData = zone;
     }
+
+    const viewerInst = viewer;
+    requestAnimationFrame(() => {
+      if (!viewerInst.isDestroyed()) {
+        applyGameCameraRules(
+          viewerInst,
+          labelLayersRef.current,
+          selectedZoneRef.current
+        );
+      }
+    });
   }, [
     hotspots,
     selectedZoneId,
@@ -383,7 +360,7 @@ export default function MushroomMap3D({
           ),
           orientation: {
             heading: 0,
-            pitch: Cesium.Math.toRadians(-55),
+            pitch: Cesium.Math.toRadians(-58),
             roll: 0,
           },
           duration: 1.2,
@@ -396,8 +373,8 @@ export default function MushroomMap3D({
       const report = userReports.find((r) => r.id === selectedReportId);
       if (report) {
         viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(report.lng, report.lat, 900),
-          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-55), roll: 0 },
+          destination: Cesium.Cartesian3.fromDegrees(report.lng, report.lat, 1600),
+          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-58), roll: 0 },
           duration: 1.2,
         });
         return;
@@ -408,8 +385,8 @@ export default function MushroomMap3D({
       const zone = spyZones.find((z) => z.id === selectedSpyZoneId);
       if (zone) {
         viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(zone.lng, zone.lat, 900),
-          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-55), roll: 0 },
+          destination: Cesium.Cartesian3.fromDegrees(zone.lng, zone.lat, 1600),
+          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-58), roll: 0 },
           duration: 1.2,
         });
       }
@@ -427,7 +404,7 @@ export default function MushroomMap3D({
         origin.lat,
         cameraHeightForRange(rangeKm)
       ),
-      orientation: { heading: 0, pitch: Cesium.Math.toRadians(-48), roll: 0 },
+      orientation: { heading: 0, pitch: Cesium.Math.toRadians(-52), roll: 0 },
       duration: 1,
     });
   }, [origin.lat, origin.lng, rangeKm]);
@@ -464,8 +441,29 @@ export default function MushroomMap3D({
   return (
     <div className="relative w-full h-full mushroom-map-3d min-h-[200px]">
       <div ref={containerRef} className="absolute inset-0" />
-      <p className="absolute bottom-2 left-2 right-14 z-[1] pointer-events-none text-[9px] text-forest-400/90 bg-forest-950/80 px-2.5 py-1.5 rounded-lg backdrop-blur-sm leading-relaxed">
-        Orbita 360° · trascina ruota · pinch inclina · zoom fino al dettaglio HD
+      <div className="absolute top-2 left-2 z-[1] pointer-events-none flex flex-col gap-1 max-w-[55%]">
+        <p className="text-[9px] text-forest-100 bg-forest-950/85 px-2 py-1 rounded-lg backdrop-blur-sm border border-forest-600/40">
+          🎮 Territori colorati · monti in rilievo · laghi/fiumi evidenziati
+        </p>
+      </div>
+      <div className="absolute top-2 right-2 z-[1] pointer-events-none hidden sm:flex flex-col gap-1 p-2 rounded-xl bg-forest-950/88 backdrop-blur-sm border border-forest-600/40">
+        <p className="text-[8px] uppercase tracking-wider text-forest-400 font-semibold mb-0.5">
+          Territori
+        </p>
+        {Object.entries(REGION_TERRITORY_COLORS).map(([region, color]) => (
+          <div key={region} className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-sm shrink-0 border border-white/20"
+              style={{ backgroundColor: color }}
+            />
+            <span className="text-[9px] text-forest-200">
+              {REGION_LABELS[region as keyof typeof REGION_LABELS]}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="absolute bottom-2 left-2 right-14 z-[1] pointer-events-none text-[9px] text-forest-300/90 bg-forest-950/85 px-2.5 py-1.5 rounded-lg backdrop-blur-sm leading-relaxed border border-forest-700/30">
+        Ruota · inclina · zoom · clic sul territorio colorato
       </p>
     </div>
   );

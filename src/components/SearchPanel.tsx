@@ -64,6 +64,7 @@ interface SearchPanelProps {
   bestHotspotScore?: number;
   hasBestHotspot?: boolean;
   onOpenFilters?: () => void;
+  onOpenPatentino?: () => void;
 }
 
 const DAY_LABELS = ["Oggi", "Domani", "Dopodomani", "+3g", "+4g"];
@@ -100,6 +101,7 @@ export default function SearchPanel({
   bestHotspotScore = 0,
   hasBestHotspot = false,
   onOpenFilters,
+  onOpenPatentino,
 }: SearchPanelProps) {
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const [customHours, setCustomHours] = useState(false);
@@ -548,6 +550,18 @@ export default function SearchPanel({
             </div>
           )}
         </div>
+
+        {onOpenPatentino && (
+          <div className="shrink-0 p-4 border-t border-forest-700/30">
+            <button
+              type="button"
+              onClick={onOpenPatentino}
+              className="w-full py-3 rounded-xl border border-mushroom-500/30 bg-mushroom-500/10 text-mushroom-200 text-xs font-semibold touch-manipulation hover:bg-mushroom-500/15 transition-colors"
+            >
+              🪪 Patentino / Tesserino funghi
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );

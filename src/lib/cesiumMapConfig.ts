@@ -1,4 +1,5 @@
 import type { Viewer } from "cesium";
+import { ConstantProperty } from "cesium";
 import type { CesiumRuntime } from "./loadCesium";
 import { CARTO_VOYAGER_LABELS_URL } from "./mapUtils";
 
@@ -8,8 +9,16 @@ const ESRI_IMAGERY_URL =
 const ESRI_LABELS_SERVER =
   "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer";
 
+const ESRI_HILLSHADE =
+  "https://services.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer";
+
+const ESRI_PHYSICAL =
+  "https://services.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer";
+
 export const IMAGERY_MAX_LEVEL = 20;
-export const GROUND_PIN_OFFSET_M = 4;
+
+/** Limite inclinazione verso l’orizzonte (evita label “a fila” in cielo) */
+export const MAX_HORIZON_PITCH_RAD = -0.32;
 
 export async function createSatelliteImageryProvider(Cesium: CesiumRuntime) {
   return Cesium.ArcGisMapServerImageryProvider.fromUrl(ESRI_IMAGERY_URL, {
@@ -17,18 +26,59 @@ export async function createSatelliteImageryProvider(Cesium: CesiumRuntime) {
   });
 }
 
-/** Stesso overlay etichette della mappa 2D (città, paesi, strade) */
-export async function addMapLabelLayers(
+export async function createWorldTerrain(Cesium: CesiumRuntime) {
+  try {
+    return await Cesium.createWorldTerrainAsync({
+      requestWaterMask: true,
+      requestVertexNormals: true,
+    });
+  } catch {
+    return new Cesium.EllipsoidTerrainProvider();
+  }
+}
+
+/** Rilievo monti + idrografia + etichette città */
+export async function addTerrainVisualLayers(
   viewer: Viewer,
   Cesium: CesiumRuntime
-): Promise<void> {
+): Promise<{ labelLayers: import("cesium").ImageryLayer[] }> {
+  const labelLayers: import("cesium").ImageryLayer[] = [];
+
+  try {
+    const hillshade = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+      ESRI_HILLSHADE,
+      { maximumLevel: 16 }
+    );
+    const hs = viewer.imageryLayers.addImageryProvider(hillshade);
+    hs.alpha = 0.52;
+    hs.brightness = 1.08;
+    hs.contrast = 1.12;
+  } catch {
+    /* optional */
+  }
+
+  try {
+    const physical = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+      ESRI_PHYSICAL,
+      { maximumLevel: 12 }
+    );
+    const phy = viewer.imageryLayers.addImageryProvider(physical);
+    phy.alpha = 0.38;
+    phy.brightness = 1.05;
+    phy.saturation = 1.35;
+    phy.hue = 0.02;
+  } catch {
+    /* optional */
+  }
+
   try {
     const esriLabels = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
       ESRI_LABELS_SERVER,
-      { maximumLevel: 19 }
+      { maximumLevel: 17 }
     );
     const esriLayer = viewer.imageryLayers.addImageryProvider(esriLabels);
-    esriLayer.alpha = 0.48;
+    esriLayer.alpha = 0.55;
+    labelLayers.push(esriLayer);
   } catch {
     /* optional */
   }
@@ -37,13 +87,17 @@ export async function addMapLabelLayers(
     const cartoLabels = new Cesium.UrlTemplateImageryProvider({
       url: CARTO_VOYAGER_LABELS_URL,
       subdomains: ["a", "b", "c", "d"],
-      maximumLevel: 20,
+      maximumLevel: 18,
       credit: "© OpenStreetMap © CARTO",
     });
-    viewer.imageryLayers.addImageryProvider(cartoLabels);
+    const cartoLayer = viewer.imageryLayers.addImageryProvider(cartoLabels);
+    cartoLayer.alpha = 0.65;
+    labelLayers.push(cartoLayer);
   } catch {
     /* optional */
   }
+
+  return { labelLayers };
 }
 
 export function configureGlobeRendering(
@@ -54,15 +108,23 @@ export function configureGlobeRendering(
   const { scene } = viewer;
   const { globe } = scene;
 
-  globe.depthTestAgainstTerrain = hasTerrain;
+  globe.depthTestAgainstTerrain = true;
   globe.showGroundAtmosphere = true;
   globe.tileCacheSize = 1500;
   globe.preloadAncestors = true;
   globe.preloadSiblings = true;
   globe.loadingDescendantLimit = 120;
-  globe.enableLighting = false;
 
-  scene.fog.enabled = false;
+  scene.verticalExaggeration = hasTerrain ? 1.85 : 1.0;
+  globe.enableLighting = hasTerrain;
+  if (hasTerrain) {
+    globe.showWaterEffect = true;
+  }
+
+  scene.fog.enabled = true;
+  scene.fog.density = 0.00018;
+  scene.fog.minimumBrightness = 0.35;
+  if (scene.skyAtmosphere) scene.skyAtmosphere.show = true;
   scene.postProcessStages.fxaa.enabled = true;
 
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio : 1;
@@ -71,6 +133,9 @@ export function configureGlobeRendering(
 
   const satellite = viewer.imageryLayers.get(0);
   if (satellite) {
+    satellite.brightness = 1.08;
+    satellite.contrast = 1.06;
+    satellite.saturation = 1.12;
     satellite.minificationFilter = Cesium.TextureMinificationFilter.LINEAR;
     satellite.magnificationFilter = Cesium.TextureMagnificationFilter.LINEAR;
   }
@@ -79,7 +144,6 @@ export function configureGlobeRendering(
   applyGlobeQualityForCameraHeight(viewer);
 }
 
-/** Orbita 360° stile Google Earth — sopra, sotto, zoom libero */
 export function configureOrbitalCamera(
   viewer: Viewer,
   Cesium: CesiumRuntime,
@@ -95,10 +159,10 @@ export function configureOrbitalCamera(
   c.enableInputs = true;
   c.enableCollisionDetection = false;
 
-  c.minimumZoomDistance = 1.5;
+  c.minimumZoomDistance = 8;
   c.maximumZoomDistance = 45_000_000;
-  c.inertiaSpin = 0.92;
-  c.inertiaTranslate = 0.9;
+  c.inertiaSpin = 0.9;
+  c.inertiaTranslate = 0.88;
   c.inertiaZoom = 0.82;
 
   c.zoomEventTypes = [
@@ -138,24 +202,78 @@ export function applyGlobeQualityForCameraHeight(viewer: Viewer): void {
   }
 }
 
-export function markerScaleByDistance(Cesium: CesiumRuntime) {
-  return new Cesium.NearFarScalar(80, 1.8, 400_000, 0.75);
+function setLabelVisibility(
+  label: import("cesium").LabelGraphics,
+  visible: boolean
+): void {
+  const prop = label.show;
+  if (prop instanceof ConstantProperty) {
+    prop.setValue(visible);
+  } else {
+    label.show = new ConstantProperty(visible);
+  }
 }
 
-export function labelScaleByDistance(Cesium: CesiumRuntime) {
-  return new Cesium.NearFarScalar(100, 1.25, 350_000, 0.85);
-}
+export function applyGameCameraRules(
+  viewer: Viewer,
+  labelTileLayers: import("cesium").ImageryLayer[],
+  selectedZoneId: string | null
+): void {
+  if (viewer.isDestroyed()) return;
 
-export function groundPinHeightReference(Cesium: CesiumRuntime) {
-  return Cesium.HeightReference.RELATIVE_TO_GROUND;
+  const { camera } = viewer;
+  let pitch = camera.pitch;
+
+  if (pitch > MAX_HORIZON_PITCH_RAD) {
+    pitch = MAX_HORIZON_PITCH_RAD;
+    camera.setView({
+      destination: camera.positionWC,
+      orientation: {
+        heading: camera.heading,
+        pitch: MAX_HORIZON_PITCH_RAD,
+        roll: camera.roll,
+      },
+    });
+  }
+
+  const height = camera.positionCartographic.height;
+  const lookingDown = pitch < -0.55;
+  const showEntityLabels = lookingDown && height < 45_000;
+
+  for (const entity of viewer.entities.values) {
+    const id = entity.id?.toString() ?? "";
+    if (entity.label && id.startsWith("hotspot-")) {
+      const zoneId = id.replace("hotspot-", "");
+      const isSelected = zoneId === selectedZoneId;
+      setLabelVisibility(
+        entity.label,
+        showEntityLabels && (isSelected || height < 12_000)
+      );
+    }
+    if (entity.label && id.startsWith("region-badge-")) {
+      setLabelVisibility(entity.label, height > 8000);
+    }
+  }
+
+  const labelAlpha =
+    height > 25_000 ? 0.75 : height > 8000 ? 0.5 : height > 2500 ? 0.28 : 0.12;
+
+  for (const layer of labelTileLayers) {
+    layer.alpha = labelAlpha;
+  }
 }
 
 export function attachQualityOnCameraMove(
   viewer: Viewer,
-  onMoveStart?: () => void,
-  onMoveEnd?: () => void
+  onMoveStart: (() => void) | undefined,
+  onMoveEnd: (() => void) | undefined,
+  labelTileLayers: import("cesium").ImageryLayer[],
+  getSelectedZoneId: () => string | null
 ): () => void {
-  const onChanged = () => applyGlobeQualityForCameraHeight(viewer);
+  const onChanged = () => {
+    applyGlobeQualityForCameraHeight(viewer);
+    applyGameCameraRules(viewer, labelTileLayers, getSelectedZoneId());
+  };
   viewer.camera.changed.addEventListener(onChanged);
   if (onMoveStart) viewer.camera.moveStart.addEventListener(onMoveStart);
   if (onMoveEnd) viewer.camera.moveEnd.addEventListener(onMoveEnd);

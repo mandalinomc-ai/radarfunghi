@@ -8,6 +8,7 @@ interface DesktopActionRailProps {
   onOpenWeatherSpy: () => void;
   onOpenGuide: () => void;
   onOpenLegend?: () => void;
+  onOpenPatentino?: () => void;
   reportCount?: number;
   spyZoneCount?: number;
   pendingCount?: number;
@@ -22,6 +23,7 @@ export default function DesktopActionRail({
   onOpenWeatherSpy,
   onOpenGuide,
   onOpenLegend,
+  onOpenPatentino,
   reportCount = 0,
   spyZoneCount = 0,
   pendingCount = 0,
@@ -76,6 +78,14 @@ export default function DesktopActionRail({
         badge={spyZoneCount > 0 ? spyZoneCount : undefined}
         title="Zona spia da link Maps"
       />
+      {onOpenPatentino && (
+        <RailBtn
+          onClick={onOpenPatentino}
+          icon="🪪"
+          label="Patent."
+          title="Patentino / tesserino funghi — guida completa"
+        />
+      )}
       {onOpenLegend && (
         <RailBtn
           onClick={onOpenLegend}
