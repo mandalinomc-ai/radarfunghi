@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { BeginnerRoadmap } from "@/lib/beginnerGuide";
 import {
   FM_TRAFFIC_LIGHT_COLORS,
@@ -8,31 +9,40 @@ import {
 import { getSpeciesGuideText } from "@/lib/beginnerGuide";
 import { formatDateLabel, todayISO } from "@/lib/dateUtils";
 import type { MushroomSpecies } from "@/lib/types";
+import { getSpeciesLabel } from "@/lib/predictionEngine";
+
+const ALL_SPECIES: MushroomSpecies[] = ["porcino", "estatino", "galletto"];
 
 interface BeginnerGuidePanelProps {
   roadmap: BeginnerRoadmap | null;
   isOpen: boolean;
+  parked: boolean;
   onClose: () => void;
-  onGenerate: () => void;
+  onPark: () => void;
+  onUnpark: () => void;
+  onGenerate: (species: MushroomSpecies[]) => void;
   isLoading: boolean;
   hasDetailOpen?: boolean;
   originReady?: boolean;
   selectedDate?: string;
   className?: string;
+  openTrigger?: number;
 }
 
 function EmptyGuideMessage({
   selectedDate,
   onClose,
+  onPark,
 }: {
   selectedDate: string;
   onClose: () => void;
+  onPark: () => void;
 }) {
   const dayLabel = formatDateLabel(selectedDate);
   return (
     <div
       className="fixed inset-0 z-[1004] pointer-events-auto flex items-center justify-center bg-forest-950/80 backdrop-blur-sm p-4"
-      onClick={onClose}
+      onClick={onPark}
     >
       <div
         className="bg-forest-900 border border-forest-600 rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl"
@@ -44,18 +54,103 @@ function EmptyGuideMessage({
         </h2>
         <p className="text-sm text-forest-400 mb-6 leading-relaxed">
           Per <strong className="text-forest-300">{dayLabel}</strong> non ci sono
-          zone con probabilità sufficiente entro il raggio dalla tua partenza.
-          Prova ad allargare il raggio, selezionare &quot;Tutte&quot; le
-          probabilità, cambiare giorno/orario o verifica di aver impostato la
-          partenza corretta.
+          zone con probabilità sufficiente per le specie scelte. Prova ad
+          allargare il raggio, cambiare giorno/orario o selezionare altre
+          specie.
         </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-full px-6 py-3 rounded-xl bg-mushroom-500 hover:bg-mushroom-400 text-white font-semibold touch-manipulation"
-        >
-          Chiudi
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-3 rounded-xl bg-forest-800 text-forest-300 font-semibold touch-manipulation"
+          >
+            Riprova
+          </button>
+          <button
+            type="button"
+            onClick={onPark}
+            className="flex-1 px-4 py-3 rounded-xl bg-mushroom-500 text-white font-semibold touch-manipulation"
+          >
+            Chiudi
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpeciesPicker({
+  selected,
+  onToggle,
+  onConfirm,
+  onPark,
+}: {
+  selected: MushroomSpecies[];
+  onToggle: (s: MushroomSpecies) => void;
+  onConfirm: () => void;
+  onPark: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[1004] pointer-events-auto flex items-end md:items-center justify-center bg-forest-950/75 backdrop-blur-sm p-0 md:p-4"
+      onClick={onPark}
+    >
+      <div
+        className="bg-forest-900 border border-mushroom-500/30 rounded-t-2xl md:rounded-2xl w-full max-w-md shadow-2xl safe-bottom"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b border-forest-700/40 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-mushroom-400">
+              Passo 1
+            </p>
+            <h2 className="text-lg font-bold text-forest-100">
+              Che funghi cerchi?
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onPark}
+            className="w-9 h-9 rounded-lg bg-forest-800 text-forest-400 touch-manipulation"
+            title="Parcheggia guida"
+          >
+            −
+          </button>
+        </div>
+        <div className="p-5 space-y-3">
+          <p className="text-xs text-forest-400 leading-relaxed">
+            Seleziona una o più specie. Poi ti dirò dove andare, quando partire
+            e cosa aspettarti.
+          </p>
+          {ALL_SPECIES.map((sp) => {
+            const active = selected.includes(sp);
+            return (
+              <button
+                key={sp}
+                type="button"
+                onClick={() => onToggle(sp)}
+                className={`w-full text-left px-4 py-3 rounded-xl border touch-manipulation transition-colors ${
+                  active
+                    ? "border-mushroom-500/60 bg-mushroom-500/15 text-mushroom-100"
+                    : "border-forest-700/50 bg-forest-950/50 text-forest-300"
+                }`}
+              >
+                <span className="font-semibold text-sm">
+                  {active ? "✓ " : ""}
+                  {getSpeciesLabel(sp)}
+                </span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={selected.length === 0}
+            className="w-full py-3.5 rounded-xl bg-mushroom-500 hover:bg-mushroom-400 disabled:opacity-40 text-white font-bold text-sm touch-manipulation mt-2"
+          >
+            Dimmi tutto
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -64,32 +159,100 @@ function EmptyGuideMessage({
 export default function BeginnerGuidePanel({
   roadmap,
   isOpen,
+  parked,
   onClose,
+  onPark,
+  onUnpark,
   onGenerate,
   isLoading,
   hasDetailOpen,
   originReady = true,
   selectedDate = todayISO(),
   className = "bottom-[278px] md:bottom-[255px]",
+  openTrigger = 0,
 }: BeginnerGuidePanelProps) {
-  if (!isOpen && !isLoading && !hasDetailOpen && originReady) {
+  const [species, setSpecies] = useState<MushroomSpecies[]>(["porcino"]);
+  const [showSpecies, setShowSpecies] = useState(false);
+
+  useEffect(() => {
+    if (openTrigger > 0) {
+      setShowSpecies(true);
+    }
+  }, [openTrigger]);
+
+  const openGuide = () => {
+    onUnpark();
+    setShowSpecies(true);
+  };
+
+  const toggleSpecies = (sp: MushroomSpecies) => {
+    setSpecies((prev) =>
+      prev.includes(sp) ? prev.filter((s) => s !== sp) : [...prev, sp]
+    );
+  };
+
+  const handleConfirmSpecies = () => {
+    if (species.length === 0) return;
+    setShowSpecies(false);
+    onGenerate(species);
+  };
+
+  const handlePark = () => {
+    setShowSpecies(false);
+    onPark();
+  };
+
+  if (!isOpen && !isLoading && !showSpecies && originReady) {
+    if (parked || hasDetailOpen) {
+      return (
+        <button
+          type="button"
+          onClick={openGuide}
+          disabled={isLoading}
+          className={`fixed ${className.replace("absolute", "")} left-3 z-[1001] pointer-events-auto w-12 h-12 rounded-full bg-mushroom-600/90 hover:bg-mushroom-500 text-white text-xl shadow-lg border border-mushroom-400/40 touch-manipulation flex items-center justify-center`}
+          title="Guida principianti — non so niente"
+        >
+          🍄
+        </button>
+      );
+    }
     return (
       <button
-        onClick={onGenerate}
+        type="button"
+        onClick={openGuide}
         disabled={isLoading}
-        className={`md:hidden absolute ${className} left-1/2 -translate-x-1/2 z-[1001] pointer-events-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-mushroom-500 via-mushroom-400 to-mushroom-500 hover:from-mushroom-400 hover:via-mushroom-300 hover:to-mushroom-400 text-white font-bold text-base tracking-wide text-center shadow-[0_0_30px_rgba(228,120,48,0.4)] border-2 border-mushroom-300/50 transition-all disabled:opacity-60 disabled:cursor-wait touch-manipulation`}
+        className={`md:hidden absolute ${className} left-1/2 -translate-x-1/2 z-[1001] pointer-events-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-mushroom-500 to-mushroom-400 text-white font-bold text-sm tracking-wide text-center shadow-lg border border-mushroom-300/40 touch-manipulation max-w-[calc(100%-1.5rem)]`}
       >
-        {isLoading ? (
-          "⏳ Preparo la guida..."
-        ) : (
-          "🍄 NON SO NIENTE — DIMMI TUTTO!"
-        )}
+        🍄 Non so niente — che fungo cerco?
       </button>
     );
   }
 
-  if (!isOpen) {
+  if (!isOpen && !showSpecies) {
+    if (!parked && originReady && !hasDetailOpen) {
+      return (
+        <button
+          type="button"
+          onClick={openGuide}
+          className="hidden md:flex fixed bottom-6 left-6 z-[1001] w-12 h-12 rounded-full bg-mushroom-600/90 hover:bg-mushroom-500 text-white text-xl shadow-lg border border-mushroom-400/40 items-center justify-center touch-manipulation"
+          title="Guida principianti"
+        >
+          🍄
+        </button>
+      );
+    }
     return null;
+  }
+
+  if (showSpecies && !isLoading) {
+    return (
+      <SpeciesPicker
+        selected={species}
+        onToggle={toggleSpecies}
+        onConfirm={handleConfirmSpecies}
+        onPark={handlePark}
+      />
+    );
   }
 
   if (isLoading) {
@@ -98,7 +261,7 @@ export default function BeginnerGuidePanel({
         <div className="bg-forest-900 border border-forest-600 rounded-2xl p-8 max-w-md text-center shadow-2xl">
           <div className="w-12 h-12 border-3 border-mushroom-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm text-forest-300">
-            Sto analizzando meteo live, zone e dati regionali...
+            Sto analizzando meteo, zone e le specie che hai scelto...
           </p>
         </div>
       </div>
@@ -107,14 +270,21 @@ export default function BeginnerGuidePanel({
 
   if (!roadmap) {
     return (
-      <EmptyGuideMessage selectedDate={selectedDate} onClose={onClose} />
+      <EmptyGuideMessage
+        selectedDate={selectedDate}
+        onClose={() => {
+          setShowSpecies(true);
+          onClose();
+        }}
+        onPark={handlePark}
+      />
     );
   }
 
   return (
     <div
       className="fixed inset-0 z-[1004] pointer-events-auto flex items-end md:items-center justify-center bg-forest-950/70 backdrop-blur-sm p-0 md:p-4 safe-top"
-      onClick={onClose}
+      onClick={handlePark}
     >
       <div
         className="bg-forest-900 border border-mushroom-500/30 rounded-t-2xl md:rounded-2xl w-full max-w-2xl max-h-[92dvh] md:max-h-[85vh] overflow-y-auto shadow-2xl safe-bottom"
@@ -129,13 +299,23 @@ export default function BeginnerGuidePanel({
               La tua spedizione fungina
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-lg bg-forest-800 hover:bg-forest-700 text-forest-300 flex items-center justify-center touch-manipulation"
-          >
-            ✕
-          </button>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={handlePark}
+              className="w-9 h-9 rounded-lg bg-forest-800 hover:bg-forest-700 text-forest-400 flex items-center justify-center touch-manipulation text-sm"
+              title="Parcheggia (icona 🍄)"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-9 h-9 rounded-lg bg-forest-800 hover:bg-forest-700 text-forest-300 flex items-center justify-center touch-manipulation"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <div className="p-4 md:p-6 space-y-4 md:space-y-5 pb-6">

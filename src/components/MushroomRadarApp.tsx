@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import dynamic from "next/dynamic";
 
-import type { MapHotspot } from "@/lib/types";
+import type { MapHotspot, MushroomSpecies } from "@/lib/types";
 
 import { FUNGAL_ZONES } from "@/lib/mockData";
 
@@ -97,6 +97,16 @@ import {
   saveOriginConfirmed,
 } from "@/lib/originStore";
 import OriginSetupModal from "./OriginSetupModal";
+import SetupWizardModal from "./SetupWizardModal";
+import {
+  loadTimeWindowConfirmed,
+  saveTimeWindowConfirmed,
+  loadOriginParked,
+  saveOriginParked,
+  loadGuideParked,
+  saveGuideParked,
+} from "@/lib/setupStore";
+import { defaultOrigin } from "@/lib/originStore";
 import {
   FORAGING_PRESETS,
   type ForagingPreset,
@@ -168,16 +178,34 @@ export default function MushroomRadarApp() {
   const [originReady, setOriginReady] = useState(false);
   const [originBootstrapped, setOriginBootstrapped] = useState(false);
   const [originEditOpen, setOriginEditOpen] = useState(false);
+  const [setupStep, setSetupStep] = useState<"when" | "where">("when");
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [guideParked, setGuideParked] = useState(false);
+  const [guideOpenTrigger, setGuideOpenTrigger] = useState(0);
 
   useEffect(() => {
+    const timeOk = loadTimeWindowConfirmed();
     const confirmed = loadOriginConfirmed();
+    const parked = loadOriginParked();
     const saved = loadStoredOrigin();
-    if (confirmed) {
-      if (saved) {
-        setCriteria((prev) => ({ ...prev, origin: saved }));
-      }
-      setOriginReady(true);
+    const parkedGuide = loadGuideParked();
+
+    if (saved) {
+      setCriteria((prev) => ({ ...prev, origin: saved }));
     }
+
+    if (timeOk && (confirmed || parked)) {
+      setOriginReady(true);
+      setSetupOpen(false);
+    } else if (timeOk) {
+      setSetupStep("where");
+      setSetupOpen(true);
+    } else {
+      setSetupStep("when");
+      setSetupOpen(true);
+    }
+
+    setGuideParked(parkedGuide);
     setOriginBootstrapped(true);
   }, []);
 
@@ -243,12 +271,38 @@ export default function MushroomRadarApp() {
       setCriteria((prev) => ({ ...prev, origin }));
       saveStoredOrigin(origin);
       saveOriginConfirmed();
+      saveOriginParked(false);
       setOriginReady(true);
       setOriginEditOpen(false);
+      setSetupOpen(false);
       refresh();
     },
     [refresh]
   );
+
+  const parkOrigin = useCallback(() => {
+    const base = defaultOrigin();
+    setCriteria((prev) => ({ ...prev, origin: base }));
+    saveStoredOrigin(base);
+    saveOriginParked(true);
+    saveOriginConfirmed();
+    setOriginReady(true);
+    setSetupOpen(false);
+    refresh();
+  }, [refresh]);
+
+  const openBeginnerGuide = useCallback(() => {
+    setGuideParked(false);
+    saveGuideParked(false);
+    setBeginnerOpen(false);
+    setBeginnerRoadmap(null);
+    setGuideOpenTrigger((n) => n + 1);
+  }, []);
+
+  const handleConfirmTime = useCallback(() => {
+    saveTimeWindowConfirmed();
+    setSetupStep("where");
+  }, []);
 
   const {
     zonesByRegion,
@@ -463,46 +517,39 @@ export default function MushroomRadarApp() {
 
 
 
-  const handleBeginnerGuide = useCallback(() => {
-    if (!originReady) return;
+  const handleBeginnerGuide = useCallback(
+    (targetSpecies: MushroomSpecies[]) => {
+      if (!originReady) return;
 
-    setGuideLoading(true);
+      setGuideLoading(true);
+      setBeginnerOpen(true);
+      setSelectedHotspot(null);
+      setMobilePanel(null);
 
-    setBeginnerOpen(true);
-
-    setSelectedHotspot(null);
-
-    setMobilePanel(null);
-
-    setTimeout(() => {
-
-      const roadmap = generateBeginnerRoadmap(
-        filteredHotspots,
-        criteria.selectedDate,
-        criteria.hourRange,
-        criteria.origin,
-        tier
-      );
-
-      setBeginnerRoadmap(roadmap);
-
-      if (roadmap) {
-
-        const match = filteredHotspots.find(
-
-          (h) => h.zone.name === roadmap.recommendedZone
-
+      setTimeout(() => {
+        const roadmap = generateBeginnerRoadmap(
+          filteredHotspots,
+          criteria.selectedDate,
+          criteria.hourRange,
+          criteria.origin,
+          tier,
+          targetSpecies
         );
 
-        if (match) setSelectedHotspot(match);
+        setBeginnerRoadmap(roadmap);
 
-      }
+        if (roadmap) {
+          const match = filteredHotspots.find(
+            (h) => h.zone.name === roadmap.recommendedZone
+          );
+          if (match) setSelectedHotspot(match);
+        }
 
-      setGuideLoading(false);
-
-    }, 600);
-
-  }, [filteredHotspots, criteria, originReady, tier]);
+        setGuideLoading(false);
+      }, 600);
+    },
+    [filteredHotspots, criteria, originReady, tier]
+  );
 
 
 
@@ -540,7 +587,7 @@ export default function MushroomRadarApp() {
 
     <div
       className={`relative w-full h-dvh overflow-hidden bg-forest-950 touch-manipulation ${
-        originBootstrapped && !originReady ? "pointer-events-none" : ""
+        originBootstrapped && setupOpen ? "pointer-events-none" : ""
       }`}
     >
 
@@ -697,7 +744,7 @@ export default function MushroomRadarApp() {
         mobileToolbar={
           <MobileDockToolbar
             onOpenChat={openMastroChat}
-            onOpenGuide={handleBeginnerGuide}
+            onOpenGuide={openBeginnerGuide}
             onOpenFilters={() => setMobilePanel("filters")}
             onOpenReport={() => setReportSheetOpen(true)}
             onOpenSpyZone={() => setSpyZonePanelOpen(true)}
@@ -714,10 +761,11 @@ export default function MushroomRadarApp() {
       />
 
       <DesktopActionRail
+        onOpenChat={openMastroChat}
         onOpenReport={() => setReportSheetOpen(true)}
         onOpenSpyZone={() => setSpyZonePanelOpen(true)}
         onOpenCompass={() => handleOpenCompassGuide("compass")}
-        onOpenGuide={handleBeginnerGuide}
+        onOpenGuide={openBeginnerGuide}
         onOpenLegend={() => setMobilePanel("legend")}
         reportCount={userReports.length}
         spyZoneCount={spyZones.length}
@@ -934,30 +982,31 @@ export default function MushroomRadarApp() {
 
 
       <BeginnerGuidePanel
-
         roadmap={beginnerRoadmap}
-
         isOpen={beginnerOpen}
-
+        parked={guideParked}
         onClose={() => {
-
           setBeginnerOpen(false);
-
           setBeginnerRoadmap(null);
-
           setGuideLoading(false);
-
         }}
-
+        onPark={() => {
+          setBeginnerOpen(false);
+          setBeginnerRoadmap(null);
+          setGuideLoading(false);
+          setGuideParked(true);
+          saveGuideParked(true);
+        }}
+        onUnpark={() => {
+          setGuideParked(false);
+          saveGuideParked(false);
+        }}
         onGenerate={handleBeginnerGuide}
-
         isLoading={guideLoading}
-
         hasDetailOpen={!!selectedHotspot}
         originReady={originReady}
-
         selectedDate={criteria.selectedDate}
-
+        openTrigger={guideOpenTrigger}
       />
 
       {chatOpen && (
@@ -1092,12 +1141,21 @@ export default function MushroomRadarApp() {
 
       />
 
-      {originBootstrapped && !originReady && (
-        <OriginSetupModal
+      {originBootstrapped && setupOpen && (
+        <SetupWizardModal
           open
-          required
+          step={setupStep}
+          selectedDate={criteria.selectedDate}
+          hourRange={criteria.hourRange}
           initialOrigin={criteria.origin}
-          onConfirm={confirmOrigin}
+          maxDayOffset={maxDayOffset}
+          onDateChange={(date) =>
+            setCriteria((prev) => ({ ...prev, selectedDate: date }))
+          }
+          onHourRangeChange={handleHourRangeChange}
+          onConfirmTime={handleConfirmTime}
+          onConfirmOrigin={confirmOrigin}
+          onParkOrigin={parkOrigin}
         />
       )}
 
@@ -1108,6 +1166,7 @@ export default function MushroomRadarApp() {
           initialOrigin={criteria.origin}
           onConfirm={confirmOrigin}
           onCancel={() => setOriginEditOpen(false)}
+          onPark={parkOrigin}
         />
       )}
 

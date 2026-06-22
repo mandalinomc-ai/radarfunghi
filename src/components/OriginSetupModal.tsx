@@ -12,6 +12,7 @@ interface OriginSetupModalProps {
   required?: boolean;
   onConfirm: (origin: GeoPoint) => void;
   onCancel?: () => void;
+  onPark?: () => void;
 }
 
 export default function OriginSetupModal({
@@ -20,6 +21,7 @@ export default function OriginSetupModal({
   required = true,
   onConfirm,
   onCancel,
+  onPark,
 }: OriginSetupModalProps) {
   const [origin, setOrigin] = useState<GeoPoint>(
     () => initialOrigin ?? defaultOrigin()
@@ -83,12 +85,12 @@ export default function OriginSetupModal({
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-forest-700/50 flex gap-2 shrink-0">
+        <div className="px-5 py-4 border-t border-forest-700/50 flex flex-col gap-2 shrink-0">
           {!required && onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 py-3 rounded-xl bg-forest-800 text-forest-300 font-semibold text-sm touch-manipulation"
+              className="w-full py-2.5 rounded-xl bg-forest-800 text-forest-300 font-semibold text-sm touch-manipulation"
             >
               Annulla
             </button>
@@ -97,10 +99,19 @@ export default function OriginSetupModal({
             type="button"
             onClick={handleConfirm}
             disabled={required && !picked}
-            className="flex-1 py-3 rounded-xl bg-mushroom-500 hover:bg-mushroom-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm touch-manipulation shadow-lg shadow-mushroom-900/30"
+            className="w-full py-3 rounded-xl bg-mushroom-500 hover:bg-mushroom-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm touch-manipulation shadow-lg shadow-mushroom-900/30"
           >
             {required ? "Conferma partenza e inizia" : "Salva partenza"}
           </button>
+          {onPark && (
+            <button
+              type="button"
+              onClick={onPark}
+              className="w-full py-2.5 rounded-xl bg-forest-800/80 text-forest-400 text-sm touch-manipulation"
+            >
+              Parcheggia — usa Benevento per ora
+            </button>
+          )}
         </div>
       </div>
     </div>

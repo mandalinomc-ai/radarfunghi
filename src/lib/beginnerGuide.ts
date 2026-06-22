@@ -184,11 +184,42 @@ export function generateBeginnerRoadmap(
   selectedDate: string,
   _hourRange: HourRange,
   origin: GeoPoint,
-  tier: ServiceTier = "free"
+  tier: ServiceTier = "free",
+  targetSpecies?: MushroomSpecies[]
 ): BeginnerRoadmap | null {
-  const viable = hotspots
+  let viable = hotspots
     .filter((h) => h.activeScore >= 28)
     .sort((a, b) => b.activeScore - a.activeScore);
+
+  if (targetSpecies && targetSpecies.length > 0) {
+    const speciesRanked = [...hotspots]
+      .map((h) => {
+        const speciesScores = targetSpecies.map((sp) => {
+          const pred = h.predictions.find((p) => p.species === sp);
+          return pred?.score ?? 0;
+        });
+        const bestSpeciesScore = Math.max(...speciesScores, 0);
+        const matchesActive = targetSpecies.includes(h.activeSpecies);
+        return {
+          hotspot: h,
+          rank: bestSpeciesScore + (matchesActive ? 8 : 0),
+        };
+      })
+      .filter((x) => x.rank >= 28)
+      .sort((a, b) => b.rank - a.rank);
+
+    if (speciesRanked.length > 0) {
+      viable = speciesRanked.map((x) => x.hotspot);
+    } else {
+      viable = viable.filter((h) =>
+        targetSpecies.some(
+          (sp) =>
+            h.zone.species.includes(sp) ||
+            h.predictions.some((p) => p.species === sp && p.score >= 25)
+        )
+      );
+    }
+  }
 
   if (viable.length === 0) return null;
 
@@ -206,7 +237,12 @@ export function generateBeginnerRoadmap(
   const depHour = Math.max(4, Math.floor(departureTotalMin / 60));
   const depMin = Math.max(0, departureTotalMin % 60);
 
-  const yields = estimateYields(best, selectedDate);
+  const yields = estimateYields(best, selectedDate).filter(
+    (y) =>
+      !targetSpecies ||
+      targetSpecies.length === 0 ||
+      targetSpecies.includes(y.species)
+  );
   const totalExpected = yields
     .map((y) => {
       if (y.min === 0 && y.max <= 1)

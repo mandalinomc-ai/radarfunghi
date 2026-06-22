@@ -113,6 +113,11 @@ export default function ClimateAlertBox({
 
               {current ? (
                 <>
+                  {current.zoneName && (
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-300/90 mb-0.5">
+                      📍 {current.zoneName}
+                    </p>
+                  )}
                   <p className="text-xs md:text-sm font-semibold text-forest-100 leading-snug">
                     {current.headline}
                   </p>

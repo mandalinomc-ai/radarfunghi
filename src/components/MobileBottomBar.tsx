@@ -33,13 +33,12 @@ export function MobileDockToolbar({
   return (
     <div className="md:hidden flex gap-0.5 px-1 pt-1.5 pb-0.5 border-b border-forest-700/40 overflow-x-auto scrollbar-none">
       <DockBtn onClick={onOpenChat} icon="💬" label="Chat" accent />
-      <DockBtn onClick={onOpenGuide} icon="🎓" label="Guida" />
+      <DockBtn onClick={onOpenGuide} icon="🍄" label="Guida" />
       <DockBtn onClick={onOpenFilters} icon="⚙️" label="Filtri" />
       <DockBtn
         onClick={onOpenReport}
         icon="📍"
         label="Segnala"
-        highlight
         badge={reportCount > 0 ? reportCount : undefined}
         pendingBadge={pendingCount}
       />

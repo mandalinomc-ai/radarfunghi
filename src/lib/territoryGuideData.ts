@@ -4,7 +4,7 @@ import { YOUTUBE_FEATURED_VIDEOS } from "./youtubeSources";
 import { VERIFIED_ZONE_BY_ID } from "./verifiedZoneCoords";
 import { getRegionLabel } from "./regionLabels";
 
-export type TerritoryMediaType = "video" | "guide" | "parco";
+export type TerritoryMediaType = "video" | "guide" | "parco" | "wiki";
 
 export interface TerritoryMediaItem {
   id: string;
@@ -13,6 +13,7 @@ export interface TerritoryMediaItem {
   description: string;
   url: string;
   thumbnailUrl?: string;
+  embedUrl?: string;
   sourceLabel: string;
   level: "ufficiale" | "editoriale" | "community";
   species: (MushroomSpecies | "all")[];
@@ -33,9 +34,73 @@ const SPECIES_TOPIC: Record<MushroomSpecies, string[]> = {
   galletto: ["finferlo", "galletto", "cantarellus"],
 };
 
+const WIKI_ZONE: Partial<Record<FungalZone["region"], { title: string; url: string; thumb: string }>> = {
+  taburno: {
+    title: "Parco regionale Taburno Camposauro",
+    url: "https://it.wikipedia.org/wiki/Parco_regionale_Taburno_Camposauro",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Taburno_camposauro.jpg/320px-Taburno_camposauro.jpg",
+  },
+  matese: {
+    title: "Parco regionale del Matese",
+    url: "https://it.wikipedia.org/wiki/Parco_regionale_del_Matese",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Lago_del_Matese.jpg/320px-Lago_del_Matese.jpg",
+  },
+  sannio: {
+    title: "Sannio",
+    url: "https://it.wikipedia.org/wiki/Sannio",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Benevento_Duomo.jpg/320px-Benevento_Duomo.jpg",
+  },
+  campania: {
+    title: "Partenio",
+    url: "https://it.wikipedia.org/wiki/Monti_del_Partenio",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Monti_del_Partenio.jpg/320px-Monti_del_Partenio.jpg",
+  },
+  basilicata: {
+    title: "Parco nazionale del Pollino",
+    url: "https://it.wikipedia.org/wiki/Parco_nazionale_del_Pollino",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Pollino_NP.jpg/320px-Pollino_NP.jpg",
+  },
+  molise: {
+    title: "Molise",
+    url: "https://it.wikipedia.org/wiki/Molise",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Campobasso_centro_storico.jpg/320px-Campobasso_centro_storico.jpg",
+  },
+};
+
+const WIKI_SPECIES: Record<MushroomSpecies, { title: string; url: string; thumb: string }> = {
+  porcino: {
+    title: "Porcino (Boletus edulis)",
+    url: "https://it.wikipedia.org/wiki/Boletus_edulis",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Boletus_edulis_1.jpg/320px-Boletus_edulis_1.jpg",
+  },
+  estatino: {
+    title: "Porcino estivo (Boletus aestivalis)",
+    url: "https://it.wikipedia.org/wiki/Boletus_aestivalis",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Boletus_aestivalis.jpg/320px-Boletus_aestivalis.jpg",
+  },
+  galletto: {
+    title: "Finferlo (Cantharellus lutescens)",
+    url: "https://it.wikipedia.org/wiki/Cantharellus_lutescens",
+    thumb: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Cantharellus_lutescens.jpg/320px-Cantharellus_lutescens.jpg",
+  },
+};
+
+function youtubeVideoId(url: string): string | undefined {
+  const watch = url.match(/[?&]v=([^&]+)/);
+  if (watch) return watch[1];
+  const short = url.match(/youtu\.be\/([^?&]+)/);
+  if (short) return short[1];
+  return undefined;
+}
+
 function youtubeThumb(url: string): string | undefined {
-  const m = url.match(/[?&]v=([^&]+)/);
-  return m ? `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` : undefined;
+  const id = youtubeVideoId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : undefined;
+}
+
+function youtubeEmbed(url: string): string | undefined {
+  const id = youtubeVideoId(url);
+  return id ? `https://www.youtube-nocookie.com/embed/${id}` : undefined;
 }
 
 function matchesSpecies(
@@ -112,6 +177,34 @@ export function getTerritoryMediaForZone(
     });
   }
 
+  const wikiZone = WIKI_ZONE[zone.region];
+  if (wikiZone) {
+    push({
+      id: `wiki-zone-${zone.region}`,
+      type: "wiki",
+      title: wikiZone.title,
+      description: `Territorio e habitat — fonte Wikipedia`,
+      url: wikiZone.url,
+      thumbnailUrl: wikiZone.thumb,
+      sourceLabel: "Wikipedia",
+      level: "editoriale",
+      species: ["all"],
+    });
+  }
+
+  const wikiSp = WIKI_SPECIES[species];
+  push({
+    id: `wiki-sp-${species}`,
+    type: "wiki",
+    title: wikiSp.title,
+    description: `Scheda micologica — morfologia, habitat, stagionalità`,
+    url: wikiSp.url,
+    thumbnailUrl: wikiSp.thumb,
+    sourceLabel: "Wikipedia",
+    level: "editoriale",
+    species: [species],
+  });
+
   for (const vid of YOUTUBE_FEATURED_VIDEOS) {
     const topics = vid.topics ?? [];
     const regionOk =
@@ -129,24 +222,14 @@ export function getTerritoryMediaForZone(
       description: vid.description,
       url: vid.url,
       thumbnailUrl: youtubeThumb(vid.url),
+      embedUrl: youtubeEmbed(vid.url),
       sourceLabel: "YouTube community (verificato)",
       level: "community",
       species: matchesSpecies(topics, species) ? [species] : ["all"],
     });
   }
 
-  push({
-    id: `zone-${zone.id}`,
-    type: "guide",
-    title: `${zone.name} — ${getRegionLabel(zone.region)}`,
-    description: `${zone.forestType} · esposizione ${zone.exposure} · ${zone.altitude} m. Specie: ${zone.species.join(", ")}.`,
-    url: `https://www.openstreetmap.org/#map=14/${zone.lat}/${zone.lng}`,
-    sourceLabel: "OpenStreetMap",
-    level: "editoriale",
-    species: ["all"],
-  });
-
-  return items.slice(0, 12);
+  return items.slice(0, 14);
 }
 
 export function getTerritoryIntro(

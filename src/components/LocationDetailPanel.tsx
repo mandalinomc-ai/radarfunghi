@@ -274,6 +274,16 @@ function PanelBody({
         <TerritoryGuideSection zone={zone} species={activeSpecies} />
       )}
 
+      {compact && onOpenCompassGuide && (
+        <button
+          type="button"
+          onClick={() => onOpenCompassGuide("territory")}
+          className="w-full py-2 rounded-lg border border-sky-500/30 bg-sky-950/20 text-sky-200 text-xs font-medium touch-manipulation"
+        >
+          🖼️ Foto, video e Wikipedia del territorio
+        </button>
+      )}
+
       <div className="grid grid-cols-2 gap-2 md:gap-3">
         <InfoBox
           label={isPremiumTier(tier) ? "Coordinate GPS" : "Zona approssimativa"}

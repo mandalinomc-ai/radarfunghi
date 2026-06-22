@@ -112,8 +112,8 @@ function deltaAlerts(
       alerts.push({
         id: `rain-${zone.id}-${ts}`,
         severity: rainDelta >= 10 ? "likely" : "watch",
-        headline: "Cambio climatico rilevato — pioggia in aumento",
-        detail: `In ${zone.name} previsto +${rainDelta.toFixed(0)} mm nelle prossime 48h. ${
+        headline: `${zone.name} — piogge in aumento`,
+        detail: `Previsto +${rainDelta.toFixed(0)} mm nelle prossime 48h. ${
           species.length > 0
             ? `Potrebbero svilupparsi ${species.map(getSpeciesLabel).join(", ")} tra 6–14 giorni.`
             : "Monitora umidità suolo e shock termico."
@@ -129,8 +129,8 @@ function deltaAlerts(
       alerts.push({
         id: `moist-${zone.id}-${ts}`,
         severity: "watch",
-        headline: "Suolo in umidificazione rapida",
-        detail: `${zone.name}: umidità suolo +${moistureDelta.toFixed(0)}% dall'ultimo aggiornamento. Condizioni favorevoli al micelio.`,
+        headline: `${zone.name} — suolo in umidificazione`,
+        detail: `Umidità suolo +${moistureDelta.toFixed(0)}% dall'ultimo aggiornamento. Condizioni favorevoli al micelio.`,
         zoneName: zone.name,
         isChange: true,
         timestamp: ts,
@@ -139,8 +139,8 @@ function deltaAlerts(
       alerts.push({
         id: `dry-${zone.id}-${ts}`,
         severity: "info",
-        headline: "Suolo in rapido essiccamento",
-        detail: `${zone.name}: −${Math.abs(moistureDelta).toFixed(0)}% umidità. Primordi a rischio se vento persiste.`,
+        headline: `${zone.name} — suolo in essiccamento`,
+        detail: `−${Math.abs(moistureDelta).toFixed(0)}% umidità. Primordi a rischio se vento persiste.`,
         zoneName: zone.name,
         isChange: true,
         timestamp: ts,
@@ -151,8 +151,8 @@ function deltaAlerts(
       alerts.push({
         id: `shock-${zone.id}-${ts}`,
         severity: "likely",
-        headline: "Shock termico notturno in aumento",
-        detail: `${zone.name}: +${shockDelta.toFixed(1)}°C shock termico — stimolo frutificazione per porcini ed estatini.`,
+        headline: `${zone.name} — shock termico in aumento`,
+        detail: `+${shockDelta.toFixed(1)}°C shock termico notturno — stimolo frutificazione per porcini ed estatini.`,
         zoneName: zone.name,
         species: zone.species.filter((s) => s !== "galletto"),
         isChange: true,
@@ -164,8 +164,8 @@ function deltaAlerts(
       alerts.push({
         id: `wind-${zone.id}-${ts}`,
         severity: "watch",
-        headline: "Vento secco in intensificazione",
-        detail: `${zone.name}: vento medio ${cur.avgWind.toFixed(0)} km/h. Funghimagazine: inibitore n.1 delle nascite.`,
+        headline: `${zone.name} — vento secco in aumento`,
+        detail: `Vento medio ${cur.avgWind.toFixed(0)} km/h. Funghimagazine: inibitore n.1 delle nascite.`,
         zoneName: zone.name,
         isChange: true,
         timestamp: ts,
@@ -209,8 +209,8 @@ function staticAlerts(
         analysis.wetnessStatus === "ottimale" || analysis.wetnessStatus === "umido"
           ? "likely"
           : "watch",
-      headline: `Possibile sviluppo — ${names}`,
-      detail: `${zone.name}: ${getWetnessLabel(analysis.wetnessStatus)} (${analysis.effectiveMoisturePct}%). ${stages}. ${analysis.summary}`,
+      headline: `${zone.name} — possibile sviluppo ${names}`,
+      detail: `${getWetnessLabel(analysis.wetnessStatus)} (${analysis.effectiveMoisturePct}%). ${stages}. ${analysis.summary}`,
       zoneName: zone.name,
       species: imminent.map((e) => e.species),
       isChange: false,
@@ -225,8 +225,8 @@ function staticAlerts(
       alerts.push({
         id: `pre-rain-${zone.id}`,
         severity: "watch",
-        headline: "Pioggia in arrivo su suolo secco",
-        detail: `${zone.name}: ~${rain48} mm previsti — possibile cambio climatico locale. Dopo 7–12 gg: porcini/galletti se quota e stagione ok.`,
+        headline: `${zone.name} — pioggia in arrivo`,
+        detail: `~${rain48} mm previsti su suolo secco — possibile cambio locale. Dopo 7–12 gg: porcini/galletti se quota e stagione ok.`,
         zoneName: zone.name,
         species: zone.species,
         isChange: false,

@@ -1,6 +1,7 @@
 "use client";
 
 interface DesktopActionRailProps {
+  onOpenChat: () => void;
   onOpenReport: () => void;
   onOpenSpyZone: () => void;
   onOpenCompass: () => void;
@@ -13,6 +14,7 @@ interface DesktopActionRailProps {
 }
 
 export default function DesktopActionRail({
+  onOpenChat,
   onOpenReport,
   onOpenSpyZone,
   onOpenCompass,
@@ -33,10 +35,28 @@ export default function DesktopActionRail({
       aria-label="Azioni rapide"
     >
       <RailBtn
+        onClick={onOpenChat}
+        icon="💬"
+        label="Chat"
+        highlight
+        title="Mastro Fungaiolo — chat"
+      />
+      <RailBtn
+        onClick={onOpenGuide}
+        icon="🍄"
+        label="Guida"
+        title="Non so niente — guida principianti"
+      />
+      <RailBtn
+        onClick={onOpenCompass}
+        icon="🧭"
+        label="Bussola"
+        title="Bussola e guida territorio"
+      />
+      <RailBtn
         onClick={onOpenReport}
         icon="📍"
         label="Segnala"
-        highlight
         badge={totalReports > 0 ? totalReports : pendingCount > 0 ? pendingCount : undefined}
         pendingBadge={pendingCount}
         title="Segnala funghi con foto"
@@ -47,18 +67,6 @@ export default function DesktopActionRail({
         label="Spia"
         badge={spyZoneCount > 0 ? spyZoneCount : undefined}
         title="Zona spia da link Maps"
-      />
-      <RailBtn
-        onClick={onOpenCompass}
-        icon="🧭"
-        label="Bussola"
-        title="Bussola e guida territorio"
-      />
-      <RailBtn
-        onClick={onOpenGuide}
-        icon="🎓"
-        label="Guida"
-        title="Guida principianti"
       />
       {onOpenLegend && (
         <RailBtn
@@ -96,7 +104,7 @@ function RailBtn({
       title={title ?? label}
       className={`relative w-12 h-12 rounded-xl flex flex-col items-center justify-center gap-0.5 touch-manipulation transition-colors ${
         highlight
-          ? "bg-green-800/50 hover:bg-green-700/60 text-green-100"
+          ? "bg-mushroom-700/50 hover:bg-mushroom-600/60 text-mushroom-100"
           : "bg-forest-800/60 hover:bg-forest-700/70 text-forest-200"
       }`}
     >
