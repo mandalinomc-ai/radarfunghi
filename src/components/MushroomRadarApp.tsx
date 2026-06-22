@@ -77,6 +77,7 @@ import LegendContent from "./LegendContent";
 import ReportMushroomSheet from "./ReportMushroomSheet";
 import SpyZonePastePanel from "./SpyZonePastePanel";
 import SpyZoneDetailPanel from "./SpyZoneDetailPanel";
+import WeatherSpyRadarPanel from "./WeatherSpyRadarPanel";
 import CompassGuidePanel from "./CompassGuidePanel";
 import { useSpyZones } from "@/hooks/useSpyZones";
 import ReportDetailPanel from "./ReportDetailPanel";
@@ -138,7 +139,7 @@ const MushroomMap = dynamic(() => import("./MushroomMap"), {
 
 
 
-type MobilePanel = "fm" | "legend" | "sources" | "chat" | "filters" | "cityPreview" | "compass" | null;
+type MobilePanel = "fm" | "legend" | "sources" | "chat" | "filters" | "cityPreview" | "compass" | "weatherSpy" | null;
 
 
 
@@ -749,6 +750,7 @@ export default function MushroomRadarApp() {
             onOpenReport={() => setReportSheetOpen(true)}
             onOpenSpyZone={() => setSpyZonePanelOpen(true)}
             onOpenCompass={() => handleOpenCompassGuide("compass")}
+            onOpenWeatherSpy={() => setMobilePanel("weatherSpy")}
             onOpenSources={() => setMobilePanel("sources")}
             onOpenFM={() => setMobilePanel("fm")}
             onOpenLegend={() => setMobilePanel("legend")}
@@ -765,6 +767,7 @@ export default function MushroomRadarApp() {
         onOpenReport={() => setReportSheetOpen(true)}
         onOpenSpyZone={() => setSpyZonePanelOpen(true)}
         onOpenCompass={() => handleOpenCompassGuide("compass")}
+        onOpenWeatherSpy={() => setMobilePanel("weatherSpy")}
         onOpenGuide={openBeginnerGuide}
         onOpenLegend={() => setMobilePanel("legend")}
         reportCount={userReports.length}
@@ -964,6 +967,18 @@ export default function MushroomRadarApp() {
       </MobileSheet>
 
 
+
+      <MobileSheet
+        open={mobilePanel === "weatherSpy"}
+        onClose={() => setMobilePanel(null)}
+        title="Meteo storico & funghi spia"
+        layout="panel"
+      >
+        <WeatherSpyRadarPanel
+          origin={criteria.origin}
+          originName={criteria.origin.name}
+        />
+      </MobileSheet>
 
       <MobileSheet
         open={mobilePanel === "compass"}

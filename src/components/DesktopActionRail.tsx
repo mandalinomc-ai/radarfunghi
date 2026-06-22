@@ -5,6 +5,7 @@ interface DesktopActionRailProps {
   onOpenReport: () => void;
   onOpenSpyZone: () => void;
   onOpenCompass: () => void;
+  onOpenWeatherSpy: () => void;
   onOpenGuide: () => void;
   onOpenLegend?: () => void;
   reportCount?: number;
@@ -18,6 +19,7 @@ export default function DesktopActionRail({
   onOpenReport,
   onOpenSpyZone,
   onOpenCompass,
+  onOpenWeatherSpy,
   onOpenGuide,
   onOpenLegend,
   reportCount = 0,
@@ -52,6 +54,12 @@ export default function DesktopActionRail({
         icon="🧭"
         label="Bussola"
         title="Bussola e guida territorio"
+      />
+      <RailBtn
+        onClick={onOpenWeatherSpy}
+        icon="🌧️"
+        label="Meteo"
+        title="Meteo storico live e funghi spia"
       />
       <RailBtn
         onClick={onOpenReport}

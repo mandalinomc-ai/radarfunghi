@@ -7,6 +7,7 @@ interface MobileDockToolbarProps {
   onOpenReport: () => void;
   onOpenSpyZone: () => void;
   onOpenCompass: () => void;
+  onOpenWeatherSpy: () => void;
   onOpenSources: () => void;
   onOpenFM: () => void;
   onOpenLegend: () => void;
@@ -23,6 +24,7 @@ export function MobileDockToolbar({
   onOpenReport,
   onOpenSpyZone,
   onOpenCompass,
+  onOpenWeatherSpy,
   onOpenSources,
   onOpenFM,
   onOpenLegend,
@@ -49,6 +51,7 @@ export function MobileDockToolbar({
         badge={spyZoneCount > 0 ? spyZoneCount : undefined}
       />
       <DockBtn onClick={onOpenCompass} icon="🧭" label="Bussola" />
+      <DockBtn onClick={onOpenWeatherSpy} icon="🌧️" label="Meteo" />
       <DockBtn onClick={onOpenSources} icon="📊" label="Fonti" />
       <DockBtn onClick={onOpenFM} icon="📡" label="FM" />
       <DockBtn onClick={onOpenLegend} icon="🗺️" label="Legenda" />
