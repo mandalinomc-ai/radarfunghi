@@ -47,7 +47,7 @@ export default function MushroomMap(props: MushroomMapProps) {
       {viewMode === "2d" ? (
         <MushroomMapLeaflet {...props} />
       ) : (
-        <MushroomMap3D {...props} />
+        <MushroomMap3D {...props} onSwitchTo2D={() => handleModeChange("2d")} />
       )}
     </div>
   );

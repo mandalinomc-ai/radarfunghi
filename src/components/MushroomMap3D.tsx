@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { loadCesium, resetCesiumLoader, type CesiumRuntime } from "@/lib/loadCesium";
 import type { Viewer, Entity, ScreenSpaceEventHandler, TerrainProvider } from "cesium";
 import type { MapHotspot, MushroomReport, SpyZoneMarker } from "@/lib/types";
 import { SPECIES_COLORS } from "@/lib/mapUtils";
@@ -8,8 +9,6 @@ import { BENEVENTO } from "@/lib/benevento";
 import { safeMapCoordinatesForTier } from "@/lib/tierUtils";
 import { getHotspotMapCenter } from "@/lib/zoneCoordinateService";
 import type { MushroomMapProps } from "./map/mushroomMapProps";
-
-type CesiumModule = typeof import("cesium");
 
 const ESRI_IMAGERY_URL =
   "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer";
@@ -36,16 +35,24 @@ export default function MushroomMap3D({
   onSpyZoneClick,
   tier = "free",
   onMapDragChange,
-}: MushroomMapProps) {
+  onSwitchTo2D,
+}: MushroomMapProps & { onSwitchTo2D?: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
-  const cesiumRef = useRef<CesiumModule | null>(null);
+  const cesiumRef = useRef<CesiumRuntime | null>(null);
   const handlerRef = useRef<ScreenSpaceEventHandler | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const onHotspotClickRef = useRef(onHotspotClick);
   const onReportClickRef = useRef(onReportClick);
   const onSpyZoneClickRef = useRef(onSpyZoneClick);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+
+  const retryLoad = useCallback(() => {
+    resetCesiumLoader();
+    setLoadError(null);
+    setRetryKey((k) => k + 1);
+  }, []);
 
   onHotspotClickRef.current = onHotspotClick;
   onReportClickRef.current = onReportClick;
@@ -59,7 +66,7 @@ export default function MushroomMap3D({
 
     (async () => {
       try {
-        const Cesium = await import("cesium");
+        const Cesium = await loadCesium();
         if (destroyed || !containerRef.current) return;
 
         const ionToken = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN?.trim();
@@ -181,7 +188,7 @@ export default function MushroomMap3D({
       cesiumRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onMapDragChange]);
+  }, [onMapDragChange, retryKey]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -389,12 +396,27 @@ export default function MushroomMap3D({
   if (loadError) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-forest-950 p-6 text-center">
-        <div>
+        <div className="max-w-xs">
           <p className="text-mushroom-400 font-semibold mb-2">Globo 3D non caricato</p>
           <p className="text-sm text-forest-400">{loadError}</p>
-          <p className="text-xs text-forest-500 mt-2">
-            Usa la vista 2D o ricarica la pagina.
-          </p>
+          <div className="flex flex-col gap-2 mt-4">
+            <button
+              type="button"
+              onClick={retryLoad}
+              className="py-2.5 rounded-xl bg-mushroom-600 text-white text-sm font-semibold touch-manipulation"
+            >
+              Riprova 3D
+            </button>
+            {onSwitchTo2D && (
+              <button
+                type="button"
+                onClick={onSwitchTo2D}
+                className="py-2.5 rounded-xl bg-forest-800 text-forest-200 text-sm touch-manipulation"
+              >
+                Torna alla mappa 2D
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
