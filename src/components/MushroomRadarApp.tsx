@@ -753,6 +753,8 @@ export default function MushroomRadarApp() {
 
         hasBestHotspot={!!bestHotspot && bestHotspot.activeScore >= 28}
 
+        onOpenFilters={() => setMobilePanel("filters")}
+
         mobileToolbar={
           <MobileDockToolbar
             onOpenChat={openMastroChat}

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { Viewer, Entity, ScreenSpaceEventHandler } from "cesium";
+import { useEffect, useRef, useState } from "react";
+import type { Viewer, Entity, ScreenSpaceEventHandler, TerrainProvider } from "cesium";
 import type { MapHotspot, MushroomReport, SpyZoneMarker } from "@/lib/types";
-import { ESRI_SATELLITE_URL, SPECIES_COLORS } from "@/lib/mapUtils";
+import { SPECIES_COLORS } from "@/lib/mapUtils";
 import { BENEVENTO } from "@/lib/benevento";
 import { safeMapCoordinatesForTier } from "@/lib/tierUtils";
 import { getHotspotMapCenter } from "@/lib/zoneCoordinateService";
@@ -11,21 +11,11 @@ import type { MushroomMapProps } from "./map/mushroomMapProps";
 
 type CesiumModule = typeof import("cesium");
 
+const ESRI_IMAGERY_URL =
+  "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer";
+
 interface HotspotEntity extends Entity {
   hotspotData?: MapHotspot;
-}
-
-async function createTerrainProvider(Cesium: CesiumModule) {
-  const token = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN?.trim();
-  if (token) {
-    Cesium.Ion.defaultAccessToken = token;
-    try {
-      return await Cesium.createWorldTerrainAsync();
-    } catch {
-      /* fallback sotto */
-    }
-  }
-  return new Cesium.EllipsoidTerrainProvider();
 }
 
 function cameraHeightForRange(rangeKm: number): number {
@@ -51,9 +41,11 @@ export default function MushroomMap3D({
   const viewerRef = useRef<Viewer | null>(null);
   const cesiumRef = useRef<CesiumModule | null>(null);
   const handlerRef = useRef<ScreenSpaceEventHandler | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const onHotspotClickRef = useRef(onHotspotClick);
   const onReportClickRef = useRef(onReportClick);
   const onSpyZoneClickRef = useRef(onSpyZoneClick);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   onHotspotClickRef.current = onHotspotClick;
   onReportClickRef.current = onReportClick;
@@ -66,100 +58,135 @@ export default function MushroomMap3D({
     const onMoveEnd = () => onMapDragChange?.(false);
 
     (async () => {
-      const Cesium = await import("cesium");
-      if (destroyed || !containerRef.current) return;
+      try {
+        const Cesium = await import("cesium");
+        if (destroyed || !containerRef.current) return;
 
-      cesiumRef.current = Cesium;
-      const terrainProvider = await createTerrainProvider(Cesium);
+        const ionToken = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN?.trim();
+        if (ionToken) {
+          Cesium.Ion.defaultAccessToken = ionToken;
+        }
 
-      const viewer = new Cesium.Viewer(containerRef.current, {
-        terrainProvider,
-        animation: false,
-        timeline: false,
-        baseLayerPicker: false,
-        geocoder: false,
-        homeButton: false,
-        sceneModePicker: true,
-        navigationHelpButton: false,
-        fullscreenButton: false,
-        infoBox: false,
-        selectionIndicator: false,
-        creditContainer: document.createElement("div"),
-      });
+        const imageryProvider =
+          await Cesium.ArcGisMapServerImageryProvider.fromUrl(ESRI_IMAGERY_URL);
 
-      viewer.scene.globe.depthTestAgainstTerrain = true;
-      viewer.scene.screenSpaceCameraController.enableCollisionDetection = true;
-      viewer.imageryLayers.removeAll();
-      viewer.imageryLayers.addImageryProvider(
-        new Cesium.UrlTemplateImageryProvider({
-          url: ESRI_SATELLITE_URL,
-          maximumLevel: 19,
-          credit: "Esri, Maxar, Earthstar Geographics",
-        })
-      );
-
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(
-          origin.lng,
-          origin.lat,
-          cameraHeightForRange(rangeKm)
-        ),
-        orientation: {
-          heading: 0,
-          pitch: Cesium.Math.toRadians(-48),
-          roll: 0,
-        },
-        duration: 0,
-      });
-
-      const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-
-      handler.setInputAction(
-        (click: ScreenSpaceEventHandler.PositionedEvent) => {
-          const picked = viewer.scene.pick(click.position);
-          if (!Cesium.defined(picked) || !picked.id) return;
-          const entity = picked.id as HotspotEntity & {
-            reportData?: MushroomReport;
-            spyData?: SpyZoneMarker;
-          };
-          if (entity.hotspotData) {
-            onHotspotClickRef.current(entity.hotspotData);
-          } else if (entity.reportData && onReportClickRef.current) {
-            onReportClickRef.current(entity.reportData);
-          } else if (entity.spyData && onSpyZoneClickRef.current) {
-            onSpyZoneClickRef.current(entity.spyData);
+        let terrainProvider: TerrainProvider =
+          new Cesium.EllipsoidTerrainProvider();
+        if (ionToken) {
+          try {
+            terrainProvider = await Cesium.createWorldTerrainAsync();
+          } catch {
+            /* ellipsoid ok */
           }
-        },
-        Cesium.ScreenSpaceEventType.LEFT_CLICK
-      );
+        }
 
-      handlerRef.current = handler;
-      viewerRef.current = viewer;
-      viewerInstance = viewer;
-      viewer.camera.moveStart.addEventListener(onMoveStart);
-      viewer.camera.moveEnd.addEventListener(onMoveEnd);
+        cesiumRef.current = Cesium;
+
+        const viewer = new Cesium.Viewer(containerRef.current, {
+          baseLayer: false,
+          terrainProvider,
+          animation: false,
+          timeline: false,
+          baseLayerPicker: false,
+          geocoder: false,
+          homeButton: false,
+          sceneModePicker: true,
+          navigationHelpButton: false,
+          fullscreenButton: false,
+          infoBox: false,
+          selectionIndicator: false,
+          creditContainer: document.createElement("div"),
+        });
+
+        viewer.imageryLayers.addImageryProvider(imageryProvider);
+
+        viewer.scene.backgroundColor =
+          Cesium.Color.fromCssColorString("#0a1209");
+        viewer.scene.globe.baseColor =
+          Cesium.Color.fromCssColorString("#1a2e18");
+        viewer.scene.globe.depthTestAgainstTerrain = Boolean(ionToken);
+        viewer.scene.screenSpaceCameraController.enableCollisionDetection =
+          Boolean(ionToken);
+
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(
+            origin.lng,
+            origin.lat,
+            cameraHeightForRange(rangeKm)
+          ),
+          orientation: {
+            heading: 0,
+            pitch: Cesium.Math.toRadians(-48),
+            roll: 0,
+          },
+          duration: 0,
+        });
+
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        handler.setInputAction(
+          (click: ScreenSpaceEventHandler.PositionedEvent) => {
+            const picked = viewer.scene.pick(click.position);
+            if (!Cesium.defined(picked) || !picked.id) return;
+            const entity = picked.id as HotspotEntity & {
+              reportData?: MushroomReport;
+              spyData?: SpyZoneMarker;
+            };
+            if (entity.hotspotData) {
+              onHotspotClickRef.current(entity.hotspotData);
+            } else if (entity.reportData && onReportClickRef.current) {
+              onReportClickRef.current(entity.reportData);
+            } else if (entity.spyData && onSpyZoneClickRef.current) {
+              onSpyZoneClickRef.current(entity.spyData);
+            }
+          },
+          Cesium.ScreenSpaceEventType.LEFT_CLICK
+        );
+
+        handlerRef.current = handler;
+        viewerRef.current = viewer;
+        viewerInstance = viewer;
+
+        viewer.camera.moveStart.addEventListener(onMoveStart);
+        viewer.camera.moveEnd.addEventListener(onMoveEnd);
+
+        viewer.resize();
+        const ro = new ResizeObserver(() => {
+          if (!viewer.isDestroyed()) viewer.resize();
+        });
+        ro.observe(containerRef.current);
+        resizeObserverRef.current = ro;
+
+        setLoadError(null);
+      } catch (err) {
+        setLoadError(
+          err instanceof Error ? err.message : "Globo 3D non disponibile"
+        );
+      }
     })();
 
     return () => {
       destroyed = true;
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
       if (viewerInstance) {
         viewerInstance.camera.moveStart.removeEventListener(onMoveStart);
         viewerInstance.camera.moveEnd.removeEventListener(onMoveEnd);
       }
       handlerRef.current?.destroy();
       handlerRef.current = null;
-      viewerRef.current?.destroy();
+      if (viewerRef.current && !viewerRef.current.isDestroyed()) {
+        viewerRef.current.destroy();
+      }
       viewerRef.current = null;
       cesiumRef.current = null;
     };
-    // Init viewer una sola volta; origine/raggio aggiornati in effetti dedicati
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onMapDragChange]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
     const Cesium = cesiumRef.current;
-    if (!viewer || !Cesium) return;
+    if (!viewer || !Cesium || viewer.isDestroyed()) return;
 
     viewer.entities.removeAll();
 
@@ -217,9 +244,13 @@ export default function MushroomMap3D({
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
           verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
           pixelOffset: new Cesium.Cartesian2(0, -16),
-          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 120_000),
+          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(
+            0,
+            120_000
+          ),
           showBackground: true,
-          backgroundColor: Cesium.Color.fromCssColorString("#0f1a12").withAlpha(0.65),
+          backgroundColor:
+            Cesium.Color.fromCssColorString("#0f1a12").withAlpha(0.65),
           backgroundPadding: new Cesium.Cartesian2(6, 4),
         },
       }) as HotspotEntity;
@@ -268,7 +299,7 @@ export default function MushroomMap3D({
   useEffect(() => {
     const viewer = viewerRef.current;
     const Cesium = cesiumRef.current;
-    if (!viewer || !Cesium) return;
+    if (!viewer || !Cesium || viewer.isDestroyed()) return;
 
     if (selectedZoneId) {
       const hotspot = hotspots.find((h) => h.zone.id === selectedZoneId);
@@ -338,7 +369,7 @@ export default function MushroomMap3D({
   useEffect(() => {
     const viewer = viewerRef.current;
     const Cesium = cesiumRef.current;
-    if (!viewer || !Cesium) return;
+    if (!viewer || !Cesium || viewer.isDestroyed()) return;
 
     viewer.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(
@@ -355,11 +386,25 @@ export default function MushroomMap3D({
     });
   }, [origin.lat, origin.lng, rangeKm]);
 
+  if (loadError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-forest-950 p-6 text-center">
+        <div>
+          <p className="text-mushroom-400 font-semibold mb-2">Globo 3D non caricato</p>
+          <p className="text-sm text-forest-400">{loadError}</p>
+          <p className="text-xs text-forest-500 mt-2">
+            Usa la vista 2D o ricarica la pagina.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative w-full h-full mushroom-map-3d">
-      <div ref={containerRef} className="w-full h-full" />
+    <div className="relative w-full h-full mushroom-map-3d min-h-[200px]">
+      <div ref={containerRef} className="absolute inset-0" />
       <p className="absolute bottom-2 left-2 right-14 z-[1] pointer-events-none text-[9px] text-forest-400/90 bg-forest-950/70 px-2 py-1 rounded-lg backdrop-blur-sm">
-        🌍 Trascina per ruotare · scroll per zoom · clic sui pin · inclina come Google Earth
+        Ruota · zoom · clic sui pin · vista inclinata
       </p>
     </div>
   );

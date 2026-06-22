@@ -84,6 +84,7 @@ export default function ClimateAlertBox({
   const [dragging, setDragging] = useState(false);
 
   const boxRef = useRef<HTMLDivElement>(null);
+  const chipRef = useRef<HTMLButtonElement>(null);
   const dragRef = useRef<{
     startX: number;
     startY: number;
@@ -129,6 +130,7 @@ export default function ClimateAlertBox({
     (e: React.PointerEvent) => {
       if (parked) return;
       const target = e.target as HTMLElement;
+      if (target.closest("button")) return;
       if (!target.closest("[data-climate-drag]")) return;
       e.preventDefault();
       const current = pos ?? defaultClimatePosition();
@@ -153,8 +155,8 @@ export default function ClimateAlertBox({
       if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
         dragRef.current.moved = true;
       }
-      const w = boxRef.current?.offsetWidth ?? (parked ? 48 : 320);
-      const h = boxRef.current?.offsetHeight ?? (parked ? 48 : 120);
+      const w = boxRef.current?.offsetWidth ?? 320;
+      const h = boxRef.current?.offsetHeight ?? 120;
       setPos(
         clampPosition(
           dragRef.current.originX + dx,
@@ -164,27 +166,27 @@ export default function ClimateAlertBox({
         )
       );
     },
-    [parked]
+    []
   );
 
-  const onPointerUp = useCallback(
-    (e: React.PointerEvent) => {
+  const finishPointer = useCallback(
+    (e: React.PointerEvent, onTap?: () => void) => {
       if (!dragRef.current) return;
-      const wasParkedTap = parked && !dragRef.current.moved;
+      const wasTap = !dragRef.current.moved;
       dragRef.current = null;
       setDragging(false);
       setPos((p) => {
         if (p) saveClimatePosition(p);
         return p;
       });
-      if (wasParkedTap) handleUnpark();
+      if (wasTap) onTap?.();
       try {
         (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
       } catch {
         /* ignore */
       }
     },
-    [parked, handleUnpark]
+    []
   );
 
   const onPointerDownChip = useCallback(
@@ -220,18 +222,19 @@ export default function ClimateAlertBox({
     const chipPos = pos ?? { x: 16, y: 80 };
     return (
       <button
+        ref={chipRef}
         type="button"
         onPointerDown={onPointerDownChip}
         onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerUp={(e) => finishPointer(e, handleUnpark)}
+        onPointerCancel={(e) => finishPointer(e)}
         style={{ left: chipPos.x, top: chipPos.y }}
         className={`pointer-events-auto fixed z-[1001] w-12 h-12 rounded-full flex items-center justify-center text-lg shadow-lg border touch-manipulation ${
           hasFreshChange
             ? "bg-mushroom-600/95 border-mushroom-400 animate-pulse"
             : "bg-forest-900/95 border-forest-600/60"
         } ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
-        title="Monitor climatico — tap per aprire, trascina per spostare"
+        title="Monitor climatico"
         aria-label="Apri monitor climatico"
       >
         🌡️
@@ -252,37 +255,41 @@ export default function ClimateAlertBox({
         dragging ? "cursor-grabbing select-none" : ""
       }`}
       aria-live="polite"
-      aria-label="Avvisi cambiamento climatico"
+      aria-label="Monitor climatico"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+      onPointerUp={(e) => finishPointer(e)}
+      onPointerCancel={(e) => finishPointer(e)}
     >
       <div
         className={`rounded-xl border backdrop-blur-md bg-forest-950/88 shadow-xl transition-shadow duration-300 ${styles.border} ${
           hasFreshChange ? "ring-2 ring-mushroom-400/40 animate-pulse" : ""
         }`}
       >
-        <div
-          data-climate-drag
-          className={`flex items-center gap-1 px-2 py-1.5 border-b border-forest-700/40 bg-forest-900/50 rounded-t-xl ${
-            dragging ? "cursor-grabbing" : "cursor-grab"
-          }`}
-        >
-          <span className="text-forest-600 text-xs px-1" aria-hidden>
-            ⠿
-          </span>
-          <p className="text-[9px] uppercase tracking-wider text-forest-500 flex-1">
-            Trascina · monitor climatico
-          </p>
+        <div className="flex items-center gap-1 px-2 py-1.5 border-b border-forest-700/40 bg-forest-900/50 rounded-t-xl">
+          <div
+            data-climate-drag
+            className={`flex items-center gap-1.5 flex-1 min-w-0 ${
+              dragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+          >
+            <span className="text-forest-600 text-xs shrink-0" aria-hidden>
+              ⠿
+            </span>
+            <p className="text-[10px] uppercase tracking-wider text-forest-300 font-semibold truncate">
+              Monitor climatico
+            </p>
+          </div>
           <button
             type="button"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               handlePark();
             }}
-            className="w-7 h-7 rounded-lg bg-forest-800 text-forest-400 text-sm touch-manipulation hover:bg-forest-700"
-            title="Parcheggia"
+            className="shrink-0 w-8 h-8 rounded-lg bg-forest-800 text-forest-300 text-base font-bold touch-manipulation hover:bg-forest-700 active:bg-mushroom-700/40"
+            title="Minimizza in icona"
+            aria-label="Minimizza monitor climatico"
           >
             −
           </button>
@@ -301,9 +308,6 @@ export default function ClimateAlertBox({
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <p className="text-[10px] uppercase tracking-wider text-forest-400 font-medium">
-                  Monitor climatico live
-                </p>
                 {current?.isChange && (
                   <span className={`text-[9px] px-1.5 py-0.5 rounded ${styles.badge}`}>
                     Cambiamento

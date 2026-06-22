@@ -12,7 +12,7 @@ export const DESKTOP_MAP_BOTTOM = "md:bottom-0";
 /** Solo mobile — dock inferiore */
 export const MAP_BOTTOM_MOBILE_COLLAPSED = "bottom-[104px] md:bottom-0";
 export const MAP_BOTTOM_MOBILE_COMPACT = "bottom-[48px] md:bottom-0";
-export const MAP_BOTTOM_MOBILE_EXPANDED = "bottom-[44dvh] md:bottom-0";
+export const MAP_BOTTOM_MOBILE_EXPANDED = "bottom-[52dvh] md:bottom-0";
 
 export const PANEL_ABOVE_DOCK_COLLAPSED = "bottom-[116px] md:bottom-4";
 export const PANEL_ABOVE_DOCK_EXPANDED = "bottom-[46dvh] md:bottom-4";
