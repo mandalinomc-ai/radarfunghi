@@ -28,10 +28,6 @@ const FAB_SIZE = 56;
 const PANEL_W = 300;
 const PANEL_H = 300;
 
-function openTelegramUrl(url: string) {
-  window.open(url, "_blank", "noopener,noreferrer");
-}
-
 export default function TelegramCommunityDock() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -128,11 +124,12 @@ export default function TelegramCommunityDock() {
             </p>
             <div className="flex flex-col gap-2">
               {links.map((item) => (
-                <button
+                <a
                   key={item.label}
-                  type="button"
-                  onClick={() => openTelegramUrl(item.url)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-xs font-semibold bg-[#229ED9]/12 text-[#5ec8f8] border border-[#229ED9]/30 hover:bg-[#229ED9]/22 active:bg-[#229ED9]/30 transition-colors touch-manipulation w-full"
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-xs font-semibold bg-[#229ED9]/12 text-[#5ec8f8] border border-[#229ED9]/30 hover:bg-[#229ED9]/22 active:bg-[#229ED9]/30 transition-colors touch-manipulation w-full no-underline"
                 >
                   <TelegramIcon className="w-4 h-4 shrink-0" />
                   <span>
@@ -141,7 +138,7 @@ export default function TelegramCommunityDock() {
                       {item.description}
                     </span>
                   </span>
-                </button>
+                </a>
               ))}
             </div>
           </div>

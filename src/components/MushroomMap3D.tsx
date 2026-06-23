@@ -87,6 +87,8 @@ export default function MushroomMap3D({
   }, [onSwitchTo2D]);
 
   useEffect(() => {
+    if (isMobileDevice()) return;
+
     let destroyed = false;
     const onMoveStart = () => onMapDragChange?.(true);
     const onMoveEnd = () => onMapDragChange?.(false);

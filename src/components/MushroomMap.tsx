@@ -76,7 +76,7 @@ export default function MushroomMap(props: MushroomMapProps) {
   return (
     <div className="relative w-full h-full">
       <MapViewModeToggle mode={viewMode} onChange={handleModeChange} />
-      {viewMode === "2d" ? (
+      {viewMode === "2d" || !canUseMap3D() ? (
         <MushroomMapLeaflet {...props} />
       ) : (
         <Map3DErrorBoundary onFallback={fallbackTo2D}>
