@@ -3,18 +3,15 @@ import { formatDateISO } from "@/lib/dateUtils";
 import { aggregateAllZoneWeather } from "@/lib/weatherAggregator";
 import { writeWeatherCache } from "@/lib/weatherCache";
 import { SERVER_CRON_INTERVAL_MIN } from "@/lib/constants";
+import { requireCronAuth } from "@/lib/security/apiGuard";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /** Cron Vercel: aggiorna meteo ogni 10 min anche senza visitatori */
 export async function GET(request: NextRequest) {
-  const auth = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret && auth !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authBlock = requireCronAuth(request);
+  if (authBlock) return authBlock;
 
   const today = formatDateISO(new Date());
 

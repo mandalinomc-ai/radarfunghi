@@ -47,6 +47,8 @@ ISTRUZIONI MANUALI:
   await tg("setWebhook", {
     url: webhookUrl,
     allowed_updates: ["message"],
+    secret_token: process.env.TELEGRAM_WEBHOOK_SECRET?.trim() || undefined,
+    drop_pending_updates: true,
   });
 
   await tg("setMyCommands", {

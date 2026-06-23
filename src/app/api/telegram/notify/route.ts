@@ -3,19 +3,16 @@ import { FUNGAL_ZONES } from "@/lib/mockData";
 import { buildHotspots } from "@/lib/predictionEngine";
 import { sendTelegramMessage } from "@/lib/telegramBot";
 import { todayISO } from "@/lib/dateUtils";
+import { requireCronAuth } from "@/lib/security/apiGuard";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://radar-funghi.vercel.app";
 
-/** Stato precedente score per zona (in-memory — reset ad ogni cold start) */
 const prevScores = new Map<string, number>();
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET?.trim();
-  if (cronSecret && auth !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authBlock = requireCronAuth(req);
+  if (authBlock) return authBlock;
 
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const groupId = process.env.TELEGRAM_GROUP_CHAT_ID?.trim();

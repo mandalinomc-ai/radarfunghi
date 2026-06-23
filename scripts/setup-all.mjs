@@ -40,6 +40,7 @@ function writeEnvFile(map) {
     "NEXT_PUBLIC_APP_URL",
     "TELEGRAM_BOT_TOKEN",
     "TELEGRAM_GROUP_CHAT_ID",
+    "TELEGRAM_WEBHOOK_SECRET",
     "TELEGRAM_API_ID",
     "TELEGRAM_API_HASH",
     "TELEGRAM_SESSION",
@@ -102,6 +103,14 @@ async function main() {
   upsertEnv("CRON_SECRET", cronSecret);
   upsertEnv("NEXT_PUBLIC_APP_URL", APP_URL);
 
+  let webhookSecret =
+    process.env.TELEGRAM_WEBHOOK_SECRET?.trim() ||
+    local.get("TELEGRAM_WEBHOOK_SECRET")?.trim();
+  if (!webhookSecret) {
+    webhookSecret = randomBytes(24).toString("hex");
+  }
+  upsertEnv("TELEGRAM_WEBHOOK_SECRET", webhookSecret);
+
   const geminiKey = process.env.GEMINI_API_KEY?.trim() || local.get("GEMINI_API_KEY")?.trim();
   const geminiModel =
     process.env.GEMINI_CHAT_MODEL?.trim() ||
@@ -148,6 +157,7 @@ async function main() {
   console.log("\n— Sync variabili Vercel —");
   vercelEnvSet("NEXT_PUBLIC_APP_URL", APP_URL);
   vercelEnvSet("CRON_SECRET", cronSecret);
+  vercelEnvSet("TELEGRAM_WEBHOOK_SECRET", webhookSecret);
   if (geminiKey) vercelEnvSet("GEMINI_API_KEY", geminiKey);
   vercelEnvSet("GEMINI_CHAT_MODEL", geminiModel, ["production"]);
 
@@ -159,7 +169,12 @@ async function main() {
       cwd: root,
       stdio: "inherit",
       shell: true,
-      env: { ...process.env, TELEGRAM_BOT_TOKEN: tgToken, NEXT_PUBLIC_APP_URL: APP_URL },
+      env: {
+        ...process.env,
+        TELEGRAM_BOT_TOKEN: tgToken,
+        NEXT_PUBLIC_APP_URL: APP_URL,
+        TELEGRAM_WEBHOOK_SECRET: webhookSecret,
+      },
     });
   } else {
     console.log("\n⚠️  Bot Telegram non provisionato (serve sessione GramJS o token manuale).");

@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BOT_COMMANDS, sendTelegramMessage } from "@/lib/telegramBot";
+import { requireCronAuth } from "@/lib/security/apiGuard";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://radar-funghi.vercel.app";
 
-/** Configura webhook/comandi se TELEGRAM_BOT_TOKEN è presente (protetto da CRON_SECRET). */
 export async function POST(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  const secret = process.env.CRON_SECRET?.trim();
-  if (secret && auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authBlock = requireCronAuth(req);
+  if (authBlock) return authBlock;
 
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   if (!token) {
@@ -21,11 +18,17 @@ export async function POST(req: NextRequest) {
   }
 
   const webhookUrl = `${APP_URL.replace(/\/$/, "")}/api/telegram/webhook`;
+  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
 
   const wh = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: webhookUrl, allowed_updates: ["message"] }),
+    body: JSON.stringify({
+      url: webhookUrl,
+      allowed_updates: ["message"],
+      secret_token: webhookSecret || undefined,
+      drop_pending_updates: true,
+    }),
   }).then((r) => r.json());
 
   const cmds = await fetch(`https://api.telegram.org/bot${token}/setMyCommands`, {
@@ -43,36 +46,43 @@ export async function POST(req: NextRequest) {
     await sendTelegramMessage(
       token,
       groupId,
-      `✅ *MushroomRadar Bot* online\nWebhook: ${webhookUrl}\nBot: @${me.result.username}`
+      `✅ *MushroomRadar Bot* online\nWebhook protetto con secret token.`
     ).catch(() => null);
   }
 
   return NextResponse.json({
     ok: wh.ok && cmds.ok,
-    webhook: wh,
-    commands: cmds,
+    webhook: { ok: wh.ok },
+    commands: { ok: cmds.ok },
     bot: me.ok ? `@${me.result.username}` : null,
   });
 }
 
 export async function GET(req: NextRequest) {
+  const authBlock = requireCronAuth(req);
+  if (authBlock) return authBlock;
+
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   if (!token) {
-    return NextResponse.json({
-      configured: false,
-      botFather: "https://t.me/BotFather?start=newbot",
-      hint: "Aggiungi TELEGRAM_BOT_TOKEN su Vercel poi POST /api/telegram/setup con Bearer CRON_SECRET",
-    });
+    return NextResponse.json({ configured: false });
   }
+
   const me = await fetch(`https://api.telegram.org/bot${token}/getMe`).then((r) =>
     r.json()
   );
   const wh = await fetch(
     `https://api.telegram.org/bot${token}/getWebhookInfo`
   ).then((r) => r.json());
+
   return NextResponse.json({
     configured: true,
-    bot: me.ok ? me.result : null,
-    webhook: wh.result,
+    bot: me.ok ? { username: me.result.username } : null,
+    webhook: wh.ok
+      ? {
+          url: wh.result.url,
+          hasCustomCertificate: wh.result.has_custom_certificate,
+          pendingUpdateCount: wh.result.pending_update_count,
+        }
+      : null,
   });
 }

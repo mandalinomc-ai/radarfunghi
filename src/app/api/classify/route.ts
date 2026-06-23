@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { classifyMushroomImage } from "@/lib/mushroomClassifier";
 import {
   SPY_MUSHROOMS,
@@ -6,6 +6,13 @@ import {
 } from "@/lib/spyMushroomIntel";
 import { extractGpsFromBase64 } from "@/lib/exifGps";
 import { fetchOpenMeteoHistory } from "@/lib/openMeteoHistory";
+import {
+  isAllowedImageMime,
+  isValidCoord,
+  MAX_IMAGE_BASE64_LEN,
+  rateLimitResponse,
+} from "@/lib/security/apiGuard";
+import { checkRateLimit, clientIp } from "@/lib/security/rateLimit";
 
 const SPY_TITLES: Record<10 | 14 | 20, string> = {
   10: "Finestra 10 giorni (incubazione)",
@@ -14,6 +21,9 @@ const SPY_TITLES: Record<10 | 14 | 20, string> = {
 };
 
 export async function POST(req: Request) {
+  const rl = checkRateLimit(`classify:${clientIp(req)}`, 8, 60_000);
+  if (!rl.allowed) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = (await req.json()) as {
       imageBase64?: string;
@@ -26,10 +36,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Immagine mancante" }, { status: 400 });
     }
 
-    const result = await classifyMushroomImage(
-      body.imageBase64,
-      body.mimeType ?? "image/jpeg"
-    );
+    if (body.imageBase64.length > MAX_IMAGE_BASE64_LEN) {
+      return NextResponse.json(
+        { error: "Immagine troppo grande (max ~6 MB)" },
+        { status: 413 }
+      );
+    }
+
+    const mime = (body.mimeType ?? "image/jpeg").toLowerCase();
+    if (!isAllowedImageMime(mime)) {
+      return NextResponse.json({ error: "Formato non supportato" }, { status: 415 });
+    }
+
+    const result = await classifyMushroomImage(body.imageBase64, mime);
 
     let spyHorizons:
       | {
@@ -42,15 +61,11 @@ export async function POST(req: Request) {
     let gpsFromPhoto: { lat: number; lng: number } | null = null;
 
     const clientLat =
-      typeof body.lat === "number" && Number.isFinite(body.lat)
-        ? body.lat
-        : null;
+      typeof body.lat === "number" && Number.isFinite(body.lat) ? body.lat : null;
     const clientLng =
-      typeof body.lng === "number" && Number.isFinite(body.lng)
-        ? body.lng
-        : null;
+      typeof body.lng === "number" && Number.isFinite(body.lng) ? body.lng : null;
 
-    if (clientLat != null && clientLng != null) {
+    if (clientLat != null && clientLng != null && isValidCoord(clientLat, clientLng)) {
       gpsFromPhoto = { lat: clientLat, lng: clientLng };
     } else {
       gpsFromPhoto = await extractGpsFromBase64(body.imageBase64);
@@ -59,7 +74,7 @@ export async function POST(req: Request) {
     if (result.isSpyMushroom && result.spyId) {
       const spy = SPY_MUSHROOMS.find((s) => s.id === result.spyId);
       if (spy) {
-        if (gpsFromPhoto) {
+        if (gpsFromPhoto && isValidCoord(gpsFromPhoto.lat, gpsFromPhoto.lng)) {
           try {
             const history = await fetchOpenMeteoHistory(
               gpsFromPhoto.lat,
