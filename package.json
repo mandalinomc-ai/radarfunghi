@@ -15,6 +15,7 @@
     "verify:gps": "npx tsx scripts/verify-gps-links.ts",
     "verify:chat-followup": "npx tsx scripts/verify-chat-followup.ts",
     "setup:telegram": "npx tsx scripts/setup-telegram.ts",
+    "setup:all": "node scripts/setup-all.mjs",
     "postinstall": "node scripts/copy-cesium-assets.mjs"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "@vercel/blob": "^2.4.0",
     "cesium": "^1.142.0",
     "chart.js": "^4.5.1",
+    "exifr": "^7.1.3",
     "leaflet": "^1.9.4",
     "next": "^15.1.0",
     "react": "^19.0.0",

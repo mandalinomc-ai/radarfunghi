@@ -12,6 +12,7 @@ interface ClassifyResponse {
   legalDisclaimer: string;
   isSpyMushroom: boolean;
   spyHorizons?: { days: number; title: string; forecast: string; confidence: string }[];
+  gpsFromPhoto?: { lat: number; lng: number } | null;
 }
 
 export default function MushroomClassifier() {
@@ -154,6 +155,12 @@ export default function MushroomClassifier() {
             <div className="grid gap-3">
               <p className="text-sm font-semibold text-amber-300">
                 Fungo Spia — finestre predittive
+                {result.gpsFromPhoto && (
+                  <span className="block text-[10px] font-normal text-sage-500 mt-0.5">
+                    GPS foto: {result.gpsFromPhoto.lat.toFixed(4)},{" "}
+                    {result.gpsFromPhoto.lng.toFixed(4)} · Open-Meteo live
+                  </span>
+                )}
               </p>
               {result.spyHorizons.map((h) => (
                 <div
