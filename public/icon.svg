@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#0a0f0d"/>
+  <circle cx="256" cy="280" r="168" stroke="#1a3d2e" stroke-width="6"/>
+  <circle cx="256" cy="280" r="120" stroke="#1a3d2e" stroke-width="4" opacity="0.7"/>
+  <circle cx="256" cy="280" r="72" stroke="#1a3d2e" stroke-width="3" opacity="0.5"/>
+  <line x1="256" y1="112" x2="256" y2="448" stroke="#1a3d2e" stroke-width="2" opacity="0.4"/>
+  <line x1="88" y1="280" x2="424" y2="280" stroke="#1a3d2e" stroke-width="2" opacity="0.4"/>
+  <path d="M256 112 L424 280" stroke="#00ff66" stroke-width="4" opacity="0.35" stroke-linecap="round"/>
+  <ellipse cx="256" cy="248" rx="52" ry="38" fill="#2d5a3d"/>
+  <ellipse cx="256" cy="232" rx="44" ry="32" fill="#3d7a4f"/>
+  <ellipse cx="256" cy="218" rx="36" ry="26" fill="#00ff66" opacity="0.95"/>
+  <ellipse cx="256" cy="210" rx="28" ry="18" fill="#66ff99" opacity="0.6"/>
+  <rect x="244" y="248" width="24" height="36" rx="8" fill="#c4a574"/>
+  <ellipse cx="256" cy="200" rx="40" ry="28" fill="none" stroke="#00ff66" stroke-width="3" opacity="0.5">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+  </ellipse>
+  <circle cx="256" cy="218" r="8" fill="#00ff66" opacity="0.9">
+    <animate attributeName="r" values="6;12;6" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>

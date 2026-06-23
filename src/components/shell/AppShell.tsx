@@ -22,6 +22,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <header className="enterprise-nav shrink-0 sticky top-0 z-[2000] border-b border-enterprise-border/60 bg-enterprise-bg/90 backdrop-blur-xl safe-top">
         <div className="flex items-center gap-2 px-3 md:px-5 h-14 md:h-16">
           <Link href="/" className="flex items-center gap-2 shrink-0 mr-2">
+            <img
+              src="/logo.png"
+              alt=""
+              width={36}
+              height={36}
+              className="w-9 h-9 rounded-xl shadow-[0_0_12px_rgba(0,255,102,0.25)]"
+            />
             <span className="text-neon text-lg font-bold tracking-tight">
               MushroomRadar
             </span>

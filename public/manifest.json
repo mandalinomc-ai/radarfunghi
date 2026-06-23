@@ -4,8 +4,21 @@
   "description": "Sprout Score e zone fungine nel Sud Italia",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a1209",
-  "theme_color": "#0a1209",
+  "background_color": "#0a0f0d",
+  "theme_color": "#0a0f0d",
   "orientation": "portrait-primary",
-  "lang": "it"
+  "lang": "it",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
 }

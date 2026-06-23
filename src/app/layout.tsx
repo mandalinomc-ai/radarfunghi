@@ -24,6 +24,13 @@ export const metadata: Metadata = {
   description:
     "Suite geo-climatica premium: mappa live, radar predittivo, analytics, diario e classificatore AI.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/logo.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

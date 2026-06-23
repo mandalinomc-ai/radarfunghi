@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       url: webhookUrl,
-      allowed_updates: ["message"],
+      allowed_updates: ["message", "callback_query"],
       secret_token: webhookSecret || undefined,
       drop_pending_updates: true,
     }),
@@ -43,11 +43,12 @@ export async function POST(req: NextRequest) {
 
   const groupId = process.env.TELEGRAM_GROUP_CHAT_ID?.trim();
   if (groupId && me.ok) {
-    await sendTelegramMessage(
+    const r = await sendTelegramMessage(
       token,
       groupId,
-      `✅ *MushroomRadar Bot* online\nWebhook protetto con secret token.`
-    ).catch(() => null);
+      `✅ *MushroomRadar Bot* online\nMenu interattivo: /menu`
+    );
+    if (!r.ok) console.error("[telegram/setup] group ping:", r.error);
   }
 
   return NextResponse.json({

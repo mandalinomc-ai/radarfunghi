@@ -15,6 +15,7 @@
     "verify:gps": "npx tsx scripts/verify-gps-links.ts",
     "verify:chat-followup": "npx tsx scripts/verify-chat-followup.ts",
     "setup:telegram": "npx tsx scripts/setup-telegram.ts",
+    "setup:telegram:community": "npx tsx scripts/setup-telegram-community.ts",
     "setup:all": "node scripts/setup-all.mjs",
     "telegram:register": "node scripts/register-telegram-token.mjs",
     "telegram:wait": "node scripts/wait-telegram-token.mjs",
