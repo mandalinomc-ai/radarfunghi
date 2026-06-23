@@ -19,6 +19,7 @@
     "telegram:register": "node scripts/register-telegram-token.mjs",
     "telegram:wait": "node scripts/wait-telegram-token.mjs",
     "test:security": "node scripts/test-production-security.mjs",
+    "test:all": "node scripts/test-all-production.mjs",
     "postinstall": "node scripts/copy-cesium-assets.mjs"
   },
   "dependencies": {
