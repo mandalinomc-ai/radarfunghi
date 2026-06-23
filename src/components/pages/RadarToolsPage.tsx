@@ -1,19 +1,25 @@
 "use client";
 
-import SearchPanel from "@/components/SearchPanel";
 import { AdvancedSearchForm } from "@/components/AdvancedSearchDrawer";
 import ResultsExplanationPanel from "@/components/ResultsExplanationPanel";
+import SeasonalSpeciesBanner from "@/components/SeasonalSpeciesBanner";
 import { useRadarSearch, ALTITUDE_BANDS } from "@/context/RadarSearchContext";
 import { useMushroomRadarContext } from "@/context/MushroomRadarContext";
-import { dayOffsetFromToday } from "@/lib/dateUtils";
-import { FORAGING_PRESETS } from "@/lib/foragingPresets";
+import {
+  DEFAULT_SEARCH_RADIUS_KM,
+  MAX_SEARCH_RADIUS_KM,
+  MIN_SEARCH_RADIUS_KM,
+} from "@/lib/benevento";
+import { PROBABILITY_FILTER_OPTIONS } from "@/lib/mapUtils";
+import { RADIUS_QUICK_KM } from "@/lib/hourPresets";
+import { getSpeciesLabel } from "@/lib/predictionEngine";
 
 export default function RadarToolsPage() {
-  const { tier, maxDayOffset } = useMushroomRadarContext();
+  const { maxDayOffset } = useMushroomRadarContext();
   const radar = useRadarSearch();
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 pb-24">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 pb-12">
       <div>
         <h1 className="font-display text-2xl text-sage-100">Radar &amp; Filtri</h1>
         <p className="text-sm text-sage-400 mt-1">
@@ -21,57 +27,94 @@ export default function RadarToolsPage() {
         </p>
       </div>
 
-      <div className="enterprise-panel rounded-2xl overflow-hidden">
-        <SearchPanel
-          selectedDate={radar.criteria.selectedDate}
-          hourRange={radar.criteria.hourRange}
-          rangeKm={radar.rangeKm}
-          probabilityFilter={radar.probabilityFilter}
-          visibleZones={radar.filteredHotspots.length}
-          totalZones={radar.liveZones.length}
-          visibleHotspots={radar.filteredHotspots.length}
-          totalHotspots={radar.filteredHotspots.length}
-          originName={radar.criteria.origin.name ?? "Partenza"}
-          species={radar.criteria.species}
-          onQuickDay={(offset) => {
-            const d = new Date();
-            d.setDate(d.getDate() + offset);
-            radar.setCriteria({
-              ...radar.criteria,
-              selectedDate: d.toISOString().slice(0, 10),
-            });
-          }}
-          onHourRangeChange={(hourRange) =>
-            radar.setCriteria({ ...radar.criteria, hourRange })
-          }
-          onRangeChange={radar.setRangeKm}
-          onProbabilityFilterChange={radar.setProbabilityFilter}
-          maxDayOffset={maxDayOffset}
+      <div className="enterprise-panel rounded-2xl p-4 md:p-5 space-y-4">
+        <SeasonalSpeciesBanner />
+        <AdvancedSearchForm
           criteria={radar.criteria}
           onCriteriaChange={radar.setCriteria}
           onSearch={() => radar.refresh()}
-          onApplyPreset={(preset) => {
-            radar.setCriteria({
-              ...radar.criteria,
-              ...(preset.hourRange ? { hourRange: preset.hourRange } : {}),
-              ...(preset.species ? { species: preset.species } : {}),
-              ...(preset.minAltitude != null
-                ? { minAltitude: preset.minAltitude }
-                : {}),
-              ...(preset.maxAltitude != null
-                ? { maxAltitude: preset.maxAltitude }
-                : {}),
-            });
-            if (preset.probabilityFilter) {
-              radar.setProbabilityFilter(preset.probabilityFilter);
-            }
-          }}
-          onGoToBest={() => {
-            if (radar.bestHotspot) radar.setSelectedHotspot(radar.bestHotspot);
-          }}
-          bestHotspotScore={radar.bestHotspot?.activeScore}
-          hasBestHotspot={!!radar.bestHotspot}
         />
+
+        <div className="grid md:grid-cols-2 gap-4 pt-2 border-t border-enterprise-border/40">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-sage-500 mb-2">
+              Raggio · {radar.rangeKm} km
+            </p>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {RADIUS_QUICK_KM.map((km) => (
+                <button
+                  key={km}
+                  type="button"
+                  onClick={() => radar.setRangeKm(km)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium touch-manipulation ${
+                    radar.rangeKm === km
+                      ? "bg-mushroom-500 text-white"
+                      : "bg-enterprise-bg/80 text-sage-400 border border-enterprise-border/40"
+                  }`}
+                >
+                  {km} km
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => radar.setRangeKm(MAX_SEARCH_RADIUS_KM)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium touch-manipulation ${
+                  radar.rangeKm >= MAX_SEARCH_RADIUS_KM
+                    ? "bg-mushroom-500 text-white"
+                    : "bg-enterprise-bg/80 text-sage-400 border border-enterprise-border/40"
+                }`}
+              >
+                Max
+              </button>
+            </div>
+            <input
+              type="range"
+              min={MIN_SEARCH_RADIUS_KM}
+              max={MAX_SEARCH_RADIUS_KM}
+              step={5}
+              value={radar.rangeKm}
+              onChange={(e) => radar.setRangeKm(Number(e.target.value))}
+              className="w-full h-2 rounded-full appearance-none bg-forest-800 accent-mushroom-500"
+            />
+            <p className="text-[10px] text-sage-500 mt-1">
+              {radar.filteredHotspots.length} zone nel raggio ·{" "}
+              {radar.criteria.species === "all"
+                ? "tutte le specie"
+                : getSpeciesLabel(radar.criteria.species)}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-sage-500 mb-2">
+              Probabilità minima
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {PROBABILITY_FILTER_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => radar.setProbabilityFilter(option.id)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold touch-manipulation ${
+                    radar.probabilityFilter === option.id
+                      ? "bg-mushroom-500 text-white"
+                      : "bg-enterprise-bg/80 text-sage-400 border border-enterprise-border/40"
+                  }`}
+                >
+                  {option.id !== "all" && (
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: option.color }}
+                    />
+                  )}
+                  {option.shortLabel}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-sage-500 mt-2">
+              Offset max {maxDayOffset} giorni · default {DEFAULT_SEARCH_RADIUS_KM} km
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -89,21 +132,6 @@ export default function RadarToolsPage() {
             {band.label}
           </button>
         ))}
-      </div>
-
-      <div className="enterprise-panel rounded-2xl p-4 md:p-5">
-        <h2 className="text-sm font-semibold text-sage-200 mb-3">
-          Preset &amp; ricerca avanzata
-        </h2>
-        <AdvancedSearchForm
-          criteria={radar.criteria}
-          onCriteriaChange={radar.setCriteria}
-          onSearch={() => radar.refresh()}
-        />
-        <p className="text-[10px] text-sage-500 mt-3">
-          Offset giorno attuale: {dayOffsetFromToday(radar.criteria.selectedDate)} ·
-          Preset disponibili: {FORAGING_PRESETS.length}
-        </p>
       </div>
 
       <ResultsExplanationPanel

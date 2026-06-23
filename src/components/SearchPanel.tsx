@@ -37,6 +37,8 @@ import {
 } from "@/lib/hourPresets";
 
 interface SearchPanelProps {
+  /** overlay = sidebar/dock fisso (mappa legacy); inline = solo contenuto senza overlay */
+  layout?: "overlay" | "inline";
   selectedDate: string;
   hourRange: HourRange;
   rangeKm: number;
@@ -74,6 +76,7 @@ const SLIDER_CLASS =
   "w-full h-3 rounded-full appearance-none cursor-pointer touch-manipulation bg-forest-800 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-mushroom-400 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-forest-900 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-mushroom-400";
 
 export default function SearchPanel({
+  layout = "overlay",
   selectedDate,
   hourRange,
   rangeKm,
@@ -169,6 +172,8 @@ export default function SearchPanel({
 
   return (
     <>
+      {layout === "overlay" && (
+      <>
       {/* ——— Mobile dock ——— */}
       <div className="absolute bottom-0 left-0 right-0 z-[1000] pointer-events-auto safe-bottom md:hidden">
         <div className="app-shell-dock rounded-t-2xl overflow-hidden">
@@ -563,6 +568,8 @@ export default function SearchPanel({
           </div>
         )}
       </aside>
+      </>
+      )}
     </>
   );
 }

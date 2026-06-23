@@ -8,6 +8,18 @@ import GlobalChatDock from "@/components/shell/GlobalChatDock";
 import TelegramCommunityDock from "@/components/TelegramCommunityDock";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import LegalGatekeeperModal from "@/components/LegalGatekeeperModal";
+import { useShowFloatingDocks } from "@/hooks/useShowFloatingDocks";
+
+function FloatingDocks() {
+  const show = useShowFloatingDocks();
+  if (!show) return null;
+  return (
+    <>
+      <GlobalChatDock />
+      <TelegramCommunityDock />
+    </>
+  );
+}
 
 function AppInner({ children }: { children: React.ReactNode }) {
   const { legalAccepted } = useMushroomRadarContext();
@@ -29,8 +41,7 @@ function AppInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       <AppShell>{children}</AppShell>
-      <GlobalChatDock />
-      <TelegramCommunityDock />
+      <FloatingDocks />
       <LegalGatekeeperModal />
     </>
   );
