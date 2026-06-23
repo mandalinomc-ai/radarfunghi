@@ -12,15 +12,15 @@ export const TELEGRAM_COMMUNITY = {
     label: "Gruppo Community",
     url:
       process.env.NEXT_PUBLIC_TELEGRAM_GROUP_URL?.trim() ||
-      "https://t.me/RADARFUNGHIBOT?startgroup=community",
-    description: "Discussioni, segnalazioni e tips tra fungaioli",
+      "https://t.me/RADARFUNGHIBOT?startgroup",
+    description: "Aggiungi il bot al gruppo e discuti con altri fungaioli",
   },
   channel: {
-    label: "Canale Aggiornamenti",
+    label: "Bot — Canale & Alert",
     url:
       process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL?.trim() ||
       "https://t.me/RADARFUNGHIBOT?start=canale",
-    description: "Allerte score, meteo e novità MushroomRadar",
+    description: "Comando /canale per aggiornamenti e allerte score",
   },
 } as const;
 

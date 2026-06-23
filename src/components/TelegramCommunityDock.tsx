@@ -14,6 +14,7 @@ import {
   type DockPosition,
 } from "@/lib/telegramDockStore";
 import { useDraggableDock } from "@/hooks/useDraggableDock";
+import { isMobileDevice } from "@/lib/deviceUtils";
 
 function TelegramIcon({ className }: { className?: string }) {
   return (
@@ -25,17 +26,23 @@ function TelegramIcon({ className }: { className?: string }) {
 
 const FAB_SIZE = 56;
 const PANEL_W = 300;
-const PANEL_H = 280;
+const PANEL_H = 300;
+
+function openTelegramUrl(url: string) {
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
 export default function TelegramCommunityDock() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<DockPosition | null>(null);
+  const [dragEnabled, setDragEnabled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setOpen(loadTelegramDockOpen());
     setPos(loadTelegramDockPosition() ?? defaultTelegramDockPosition());
+    setDragEnabled(!isMobileDevice());
   }, []);
 
   const persistPos = useCallback((p: DockPosition) => {
@@ -50,7 +57,8 @@ export default function TelegramCommunityDock() {
   const { dragging, onDragStart, onDragMove, onDragEnd } = useDraggableDock(
     pos,
     persistPos,
-    size
+    size,
+    dragEnabled
   );
 
   const toggleOpen = useCallback(() => {
@@ -86,13 +94,13 @@ export default function TelegramCommunityDock() {
           }`}
         >
           <div
-            className={`flex items-center justify-between px-3 py-2.5 border-b border-enterprise-border/50 bg-[#229ED9]/10 touch-none ${
-              dragging ? "cursor-grabbing" : "cursor-grab"
+            className={`flex items-center justify-between px-3 py-2.5 border-b border-enterprise-border/50 bg-[#229ED9]/10 ${
+              dragEnabled ? (dragging ? "cursor-grabbing" : "cursor-grab") : ""
             }`}
-            onPointerDown={(e) => onDragStart(e, true)}
-            onPointerMove={onDragMove}
-            onPointerUp={(e) => onDragEnd(e)}
-            onPointerCancel={(e) => onDragEnd(e)}
+            onPointerDown={dragEnabled ? onDragStart : undefined}
+            onPointerMove={dragEnabled ? onDragMove : undefined}
+            onPointerUp={dragEnabled ? (e) => onDragEnd(e) : undefined}
+            onPointerCancel={dragEnabled ? (e) => onDragEnd(e) : undefined}
           >
             <div className="flex items-center gap-2 min-w-0">
               <TelegramIcon className="w-5 h-5 text-[#229ED9] shrink-0" />
@@ -120,12 +128,11 @@ export default function TelegramCommunityDock() {
             </p>
             <div className="flex flex-col gap-2">
               {links.map((item) => (
-                <a
+                <button
                   key={item.label}
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold bg-[#229ED9]/12 text-[#5ec8f8] border border-[#229ED9]/30 hover:bg-[#229ED9]/22 transition-colors touch-manipulation"
+                  type="button"
+                  onClick={() => openTelegramUrl(item.url)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-xs font-semibold bg-[#229ED9]/12 text-[#5ec8f8] border border-[#229ED9]/30 hover:bg-[#229ED9]/22 active:bg-[#229ED9]/30 transition-colors touch-manipulation w-full"
                 >
                   <TelegramIcon className="w-4 h-4 shrink-0" />
                   <span>
@@ -134,30 +141,48 @@ export default function TelegramCommunityDock() {
                       {item.description}
                     </span>
                   </span>
-                </a>
+                </button>
               ))}
             </div>
           </div>
         </div>
+      ) : dragEnabled ? (
+        <button
+          type="button"
+          aria-label="Apri community Telegram"
+          title={TELEGRAM_COMMUNITY_HEADLINE}
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={(e) => onDragEnd(e, toggleOpen)}
+          onPointerCancel={(e) => onDragEnd(e)}
+          className={`pointer-events-auto relative flex items-center justify-center w-14 h-14 rounded-full bg-[#229ED9] hover:bg-[#1a8bc4] text-white shadow-[0_4px_24px_rgba(34,158,217,0.45)] transition-transform touch-manipulation active:scale-95 ${
+            dragging ? "scale-105" : ""
+          }`}
+        >
+          <span
+            className="absolute inset-0 rounded-full bg-[#229ED9] animate-ping opacity-25 pointer-events-none"
+            aria-hidden
+          />
+          <TelegramIcon className="relative w-7 h-7 pointer-events-none" />
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[9px] font-bold text-[#229ED9] flex items-center justify-center border-2 border-[#229ED9] shadow-md pointer-events-none">
+            TG
+          </span>
+        </button>
       ) : (
         <button
           type="button"
           aria-label="Apri community Telegram"
           title={TELEGRAM_COMMUNITY_HEADLINE}
-          className={`pointer-events-auto relative flex items-center justify-center w-14 h-14 rounded-full bg-[#229ED9] hover:bg-[#1a8bc4] text-white shadow-[0_4px_24px_rgba(34,158,217,0.45)] transition-transform touch-manipulation ${
-            dragging ? "cursor-grabbing scale-105" : "cursor-grab active:scale-95"
-          }`}
-          onPointerDown={(e) => onDragStart(e, false)}
-          onPointerMove={onDragMove}
-          onPointerUp={(e) => onDragEnd(e, toggleOpen)}
-          onPointerCancel={(e) => onDragEnd(e)}
+          onClick={toggleOpen}
+          className="pointer-events-auto relative flex items-center justify-center w-14 h-14 rounded-full bg-[#229ED9] hover:bg-[#1a8bc4] text-white shadow-[0_4px_24px_rgba(34,158,217,0.45)] transition-transform touch-manipulation active:scale-95"
+          style={{ touchAction: "manipulation" }}
         >
           <span
-            className="absolute inset-0 rounded-full bg-[#229ED9] animate-ping opacity-25"
+            className="absolute inset-0 rounded-full bg-[#229ED9] animate-ping opacity-25 pointer-events-none"
             aria-hidden
           />
-          <TelegramIcon className="relative w-7 h-7" />
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[9px] font-bold text-[#229ED9] flex items-center justify-center border-2 border-[#229ED9] shadow-md">
+          <TelegramIcon className="relative w-7 h-7 pointer-events-none" />
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[9px] font-bold text-[#229ED9] flex items-center justify-center border-2 border-[#229ED9] shadow-md pointer-events-none">
             TG
           </span>
         </button>

@@ -21,6 +21,7 @@ import {
 import type { ImageryLayer, Viewer, Entity, ScreenSpaceEventHandler, TerrainProvider } from "cesium";
 import type { MapHotspot, MushroomReport, SpyZoneMarker } from "@/lib/types";
 import { BENEVENTO } from "@/lib/benevento";
+import { isMobileDevice } from "@/lib/deviceUtils";
 import { safeMapCoordinatesForTier } from "@/lib/tierUtils";
 import { getHotspotMapCenter } from "@/lib/zoneCoordinateService";
 import type { MushroomMapProps } from "./map/mushroomMapProps";
@@ -78,6 +79,12 @@ export default function MushroomMap3D({
   onHotspotClickRef.current = onHotspotClick;
   onReportClickRef.current = onReportClick;
   onSpyZoneClickRef.current = onSpyZoneClick;
+
+  useEffect(() => {
+    if (isMobileDevice()) {
+      onSwitchTo2D?.();
+    }
+  }, [onSwitchTo2D]);
 
   useEffect(() => {
     let destroyed = false;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, useCallback, useState, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import MapViewModeToggle from "./map/MapViewModeToggle";
 import {
@@ -9,6 +9,7 @@ import {
   type MapViewMode,
   type MushroomMapProps,
 } from "./map/mushroomMapProps";
+import { canUseMap3D } from "@/lib/deviceUtils";
 
 const MushroomMapLeaflet = dynamic(() => import("./MushroomMapLeaflet"), {
   ssr: false,
@@ -65,6 +66,12 @@ export default function MushroomMap(props: MushroomMapProps) {
     setViewMode("2d");
     saveMapViewMode("2d");
   }, []);
+
+  useEffect(() => {
+    if (viewMode === "3d" && !canUseMap3D()) {
+      fallbackTo2D();
+    }
+  }, [viewMode, fallbackTo2D]);
 
   return (
     <div className="relative w-full h-full">

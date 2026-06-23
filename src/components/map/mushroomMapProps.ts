@@ -2,6 +2,7 @@ import type { MapHotspot, MushroomReport, SpyZoneMarker } from "@/lib/types";
 import type { GeoPoint } from "@/lib/geoUtils";
 import type { ServiceTier } from "@/lib/tierUtils";
 import { BENEVENTO } from "@/lib/benevento";
+import { canUseMap3D } from "@/lib/deviceUtils";
 
 export interface MushroomMapProps {
   hotspots: MapHotspot[];
@@ -25,11 +26,16 @@ export type MapViewMode = "2d" | "3d";
 
 export function loadMapViewMode(): MapViewMode {
   if (typeof window === "undefined") return "2d";
+  if (!canUseMap3D()) return "2d";
   return sessionStorage.getItem(MAP_VIEW_MODE_KEY) === "3d" ? "3d" : "2d";
 }
 
 export function saveMapViewMode(mode: MapViewMode): void {
   if (typeof window === "undefined") return;
+  if (mode === "3d" && !canUseMap3D()) {
+    sessionStorage.setItem(MAP_VIEW_MODE_KEY, "2d");
+    return;
+  }
   sessionStorage.setItem(MAP_VIEW_MODE_KEY, mode);
 }
 

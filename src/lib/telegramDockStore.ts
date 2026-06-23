@@ -6,12 +6,15 @@ export interface DockPosition {
 const POS_KEY = "mushroomradar-telegram-dock-pos";
 const OPEN_KEY = "mushroomradar-telegram-dock-open";
 
+const FAB = 56;
+
 export function defaultTelegramDockPosition(): DockPosition {
   if (typeof window === "undefined") return { x: 16, y: 400 };
   const isMd = window.innerWidth >= 768;
+  const bottomInset = isMd ? 100 : 130;
   return {
-    x: isMd ? 24 : 16,
-    y: window.innerHeight - (isMd ? 200 : 220),
+    x: isMd ? 20 : 12,
+    y: Math.max(12, window.innerHeight - bottomInset - FAB),
   };
 }
 
