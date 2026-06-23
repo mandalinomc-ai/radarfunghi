@@ -66,7 +66,12 @@ async function main() {
     cwd: root,
     stdio: "inherit",
     shell: true,
-    env: { ...process.env, TELEGRAM_BOT_TOKEN: token, NEXT_PUBLIC_APP_URL: APP_URL },
+    env: {
+      ...process.env,
+      TELEGRAM_BOT_TOKEN: token,
+      NEXT_PUBLIC_APP_URL: APP_URL,
+      TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET,
+    },
   });
 
   console.log("\n— Deploy produzione —");

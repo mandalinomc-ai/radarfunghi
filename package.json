@@ -17,6 +17,7 @@
     "setup:telegram": "npx tsx scripts/setup-telegram.ts",
     "setup:all": "node scripts/setup-all.mjs",
     "telegram:register": "node scripts/register-telegram-token.mjs",
+    "telegram:wait": "node scripts/wait-telegram-token.mjs",
     "test:security": "node scripts/test-production-security.mjs",
     "postinstall": "node scripts/copy-cesium-assets.mjs"
   },
