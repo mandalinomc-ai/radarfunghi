@@ -164,12 +164,47 @@ export async function POST(req: NextRequest) {
       token,
       chatId,
       `*MushroomRadar Bot* 🍄\n\n` +
+        `*Unisciti alla community:*\n` +
+        `• Bot: @RADARFUNGHIBOT\n` +
+        `• Gruppo: aggiungi il bot al gruppo (link startgroup)\n` +
+        `• Canale: segui gli aggiornamenti su ${APP_URL}/telegram\n\n` +
         `/radar — mappa live\n` +
         `/diario — registro raccolti\n` +
         `Invia *posizione GPS* per report Sprout Score\n` +
         `Invia *foto* per identificazione (non sostituisce micologo)\n\n` +
         `_Uso educativo. Raccolta responsabile._`
     );
+  } else if (text.startsWith("/canale") || text === "canale") {
+    await sendTelegramMessage(
+      token,
+      chatId,
+      `*Canale aggiornamenti MushroomRadar*\n\n` +
+        `Segui il sito per allerte score ≥80%:\n${APP_URL}\n\n` +
+        `Per creare il canale ufficiale: aggiungi @RADARFUNGHIBOT come admin del canale e invia /setalerts nel gruppo Pro.`
+    );
+  } else if (text.startsWith("/setalerts")) {
+    const chatType = (update.message as { chat?: { type?: string; id?: number; title?: string } })
+      ?.chat?.type;
+    const rawChatId = (update.message as { chat?: { id?: number } })?.chat?.id;
+    if (
+      rawChatId &&
+      (chatType === "group" || chatType === "supergroup" || chatType === "channel")
+    ) {
+      await sendTelegramMessage(
+        token,
+        chatId,
+        `*Allerte Pro registrate* 🚨\n` +
+          `Chat ID: \`${rawChatId}\`\n` +
+          `Aggiungi su Vercel:\nTELEGRAM_GROUP_CHAT_ID=${rawChatId}\n\n` +
+          `Le allerte score ≥80% arriveranno qui via cron giornaliero.`
+      );
+    } else {
+      await sendTelegramMessage(
+        token,
+        chatId,
+        "Usa /setalerts *dentro* il gruppo o canale Pro dove vuoi ricevere le allerte."
+      );
+    }
   } else if (text.startsWith("/radar")) {
     await sendTelegramMessage(token, chatId, `Mappa live: ${APP_URL}`);
   } else if (text.startsWith("/diario")) {

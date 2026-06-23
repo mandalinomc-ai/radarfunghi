@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMushroomRadarContext } from "@/context/MushroomRadarContext";
+import TelegramCommunityBanner from "@/components/TelegramCommunityBanner";
 
 const NAV = [
   { href: "/", label: "Mappa Live", icon: "🗺️" },
@@ -52,6 +53,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+
+          <TelegramCommunityBanner variant="compact" />
 
           <span
             className={`shrink-0 text-[9px] uppercase tracking-wider px-2 py-1 rounded-md border ${
