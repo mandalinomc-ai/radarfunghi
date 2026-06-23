@@ -48,10 +48,10 @@ export default function MapViewModeToggle({
         </button>
       ) : (
         <span
-          className="px-3 py-2 text-[10px] font-medium text-forest-500 border-l border-forest-700/50"
-          title="3D disabilitato su mobile per stabilità"
+          className="px-3 py-2 text-[10px] font-medium text-forest-500 border-l border-forest-700/50 cursor-help"
+          title="Su smartphone la 3D è disattivata per evitare crash. Usa un PC per il globo satellitare."
         >
-          3D desktop
+          3D solo PC
         </span>
       )}
     </div>

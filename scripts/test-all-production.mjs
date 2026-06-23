@@ -161,6 +161,15 @@ async function main() {
   )
     ok++;
 
+  total++;
+  if (
+    await test("Asset Cesium 3D su server", async () => {
+      const r = await fetch(`${BASE}/cesium/Cesium.js`, { method: "HEAD" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    })
+  )
+    ok++;
+
   console.log(`\n${ok}/${total} test passati\n`);
 
   const sec = spawnSync("node", ["scripts/test-production-security.mjs"], {

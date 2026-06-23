@@ -350,7 +350,7 @@ const RAW_FUNGAL_ZONES: ZoneInput[] = [
     altitude: 1120,
     exposure: "north",
     forestType: "Faggeta fitta con Faggio e Acero",
-    species: ["porcino"],
+    species: ["porcino", "estatino"],
     rainHistory: generateRainHistory(19),
     baseSoilMoisture: 80,
     nightThermalShock: 13.8,

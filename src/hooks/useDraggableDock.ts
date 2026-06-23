@@ -2,24 +2,10 @@
 
 import { useCallback, useRef, useState } from "react";
 import type { DockPosition } from "@/lib/telegramDockStore";
+import { clampDockPosition } from "@/lib/dockUtils";
 import { isMobileDevice } from "@/lib/deviceUtils";
 
 const DRAG_THRESHOLD = 10;
-
-export function clampDockPosition(
-  x: number,
-  y: number,
-  w: number,
-  h: number
-): DockPosition {
-  const m = 8;
-  const maxX = Math.max(m, window.innerWidth - w - m);
-  const maxY = Math.max(m, window.innerHeight - h - m);
-  return {
-    x: Math.min(maxX, Math.max(m, x)),
-    y: Math.min(maxY, Math.max(m, y)),
-  };
-}
 
 export function useDraggableDock(
   pos: DockPosition | null,

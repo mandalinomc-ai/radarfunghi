@@ -1,3 +1,6 @@
+import { clampDockPosition } from "@/lib/dockUtils";
+import { isMobileDevice } from "@/lib/deviceUtils";
+
 export interface DockPosition {
   x: number;
   y: number;
@@ -7,15 +10,20 @@ const POS_KEY = "mushroomradar-telegram-dock-pos";
 const OPEN_KEY = "mushroomradar-telegram-dock-open";
 
 const FAB = 56;
+const PANEL_W = 300;
+const PANEL_H = 300;
 
 export function defaultTelegramDockPosition(): DockPosition {
   if (typeof window === "undefined") return { x: 16, y: 400 };
   const isMd = window.innerWidth >= 768;
-  const bottomInset = isMd ? 100 : 130;
-  return {
+  const bottomInset = isMd ? 100 : 140;
+  const w = FAB;
+  const h = FAB;
+  const raw = {
     x: isMd ? 20 : 12,
     y: Math.max(12, window.innerHeight - bottomInset - FAB),
   };
+  return clampDockPosition(raw.x, raw.y, w, h);
 }
 
 export function loadTelegramDockPosition(): DockPosition | null {
@@ -23,7 +31,10 @@ export function loadTelegramDockPosition(): DockPosition | null {
     const raw = localStorage.getItem(POS_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw) as DockPosition;
-    if (typeof p.x === "number" && typeof p.y === "number") return p;
+    if (typeof p.x === "number" && typeof p.y === "number") {
+      if (isMobileDevice()) return null;
+      return clampDockPosition(p.x, p.y, FAB, FAB);
+    }
   } catch {
     /* ignore */
   }
@@ -35,6 +46,7 @@ export function saveTelegramDockPosition(pos: DockPosition) {
 }
 
 export function loadTelegramDockOpen(): boolean {
+  if (isMobileDevice()) return false;
   try {
     return localStorage.getItem(OPEN_KEY) === "1";
   } catch {

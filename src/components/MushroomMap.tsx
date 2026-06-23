@@ -23,12 +23,12 @@ const MushroomMap3D = dynamic(() => import("./MushroomMap3D"), {
 
 class Map3DErrorBoundary extends Component<
   { onFallback: () => void; children: ReactNode },
-  { failed: boolean }
+  { failed: boolean; message: string | null }
 > {
-  state = { failed: false };
+  state = { failed: false, message: null };
 
   static getDerivedStateFromError() {
-    return { failed: true };
+    return { failed: true, message: "Globo 3D non disponibile — uso mappa 2D." };
   }
 
   componentDidCatch() {
@@ -36,7 +36,15 @@ class Map3DErrorBoundary extends Component<
   }
 
   render() {
-    if (this.state.failed) return null;
+    if (this.state.failed) {
+      return (
+        <div className="absolute inset-0 z-[1002] flex items-start justify-center pt-16 pointer-events-none">
+          <p className="px-4 py-2 rounded-xl bg-forest-950/90 border border-mushroom-500/40 text-mushroom-300 text-xs">
+            {this.state.message}
+          </p>
+        </div>
+      );
+    }
     return this.props.children;
   }
 }
