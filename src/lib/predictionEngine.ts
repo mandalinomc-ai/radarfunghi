@@ -8,6 +8,8 @@ import type {
 import { getHoursInRange, type HourRange } from "./timeRange";
 import { isPastItalianDateRange, dayOffsetFromToday } from "./dateUtils";
 import { calculateEnvironmentalMalus } from "./environmentalMalus";
+import { calculateSoilGDDGate } from "./soilGDDModel";
+import { calculateFruitingShockBonus } from "./fruitingShockBonus";
 import { getSocialBonusForRegion } from "./socialScraper";
 import { getReportReliabilityMultiplier } from "./zoneReliabilityBonus";
 import { getRegionalStatusForZone } from "./funghimagazineData";
@@ -232,6 +234,13 @@ export function calculateSproutScore(
 
   const malus = calculateEnvironmentalMalus(z, selectedDate);
   score = clamp(score * malus.combinedMultiplier);
+
+  const gdd = calculateSoilGDDGate(z, species, selectedDate);
+  score = clamp(score * gdd.multiplier);
+
+  if (species === "porcino") {
+    score = clamp(score * calculateFruitingShockBonus(z, selectedDate));
+  }
 
   const seasonal = getSeasonalMultiplier(species, selectedDate, z.region);
   score = clamp(score * seasonal);

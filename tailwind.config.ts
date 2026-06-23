@@ -9,6 +9,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        neon: "#00ff66",
+        sage: {
+          100: "#d4e8d2",
+          200: "#b8d4b5",
+          300: "#9cb89a",
+          400: "#7a9a78",
+          500: "#5a7a58",
+          600: "#3d5a3b",
+        },
+        enterprise: {
+          bg: "#0a0f0d",
+          panel: "#0f1613",
+          border: "#1a2e24",
+        },
         forest: {
           950: "#0a1209",
           900: "#0f1a0e",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import AppProviders from "@/components/shell/AppProviders";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,18 +20,16 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "MushroomRadar — Zone fungine entro 3h da Benevento",
+  title: "MushroomRadar Enterprise — Bloomberg dei Funghi",
   description:
-    "Mappa satellitare con predizione oraria di Porcini, Estatini e Galletti. Partenza da Benevento, GPS o città personalizzata.",
+    "Suite geo-climatica premium: mappa live, radar predittivo, analytics, diario e classificatore AI.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "MushroomRadar",
   },
-  formatDetection: {
-    telephone: false,
-  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport = {
@@ -39,20 +38,18 @@ export const viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover" as const,
-  themeColor: "#0a1209",
+  themeColor: "#0a0f0d",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="it">
+    <html lang="it" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased bg-enterprise-bg text-sage-300`}
       >
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

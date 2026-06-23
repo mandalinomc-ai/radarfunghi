@@ -4,6 +4,7 @@ import { floodRecoveryRatePerDay } from "./zoneSoilRetention";
 export interface EnvironmentalMalusResult {
   floodMultiplier: number;
   windMultiplier: number;
+  severeWindMultiplier: number;
   pressureMultiplier: number;
   combinedMultiplier: number;
   rainLast3DaysMm: number;
@@ -66,6 +67,27 @@ export function calculateWindMalus(zone: FungalZone): number {
   return 1;
 }
 
+/** Vento forte >25 km/h per 6+ ore consecutive → malus 40% (×0.60) */
+export function calculateSevereWindEvapMalus(zone: FungalZone): number {
+  const recent = zone.hourlyForecasts.slice(-72);
+  let consecutive = 0;
+  let maxConsecutive = 0;
+
+  for (const f of recent) {
+    const speed = f.windSpeed ?? estimateWindFromHumidity(f.humidity);
+    const gust = f.windGusts ?? 0;
+    if (speed > 25 || gust > 30) {
+      consecutive++;
+      maxConsecutive = Math.max(maxConsecutive, consecutive);
+    } else {
+      consecutive = 0;
+    }
+  }
+
+  if (maxConsecutive >= 6) return 0.6;
+  return 1;
+}
+
 /**
  * Pressione + nuvolosità — fronti in arrivo (pressione in calo) favoriscono umidità;
  * alta pressione prolungata + cielo sereno asciuga il letto fogliare.
@@ -103,6 +125,7 @@ export function calculateEnvironmentalMalus(
 ): EnvironmentalMalusResult {
   const floodMultiplier = calculateFloodMalus(zone, selectedDate);
   const windMultiplier = calculateWindMalus(zone);
+  const severeWindMultiplier = calculateSevereWindEvapMalus(zone);
   const pressureMultiplier = calculatePressureMalus(zone);
   const rainLast3DaysMm = rainLastNDays(zone, 3, selectedDate);
   const windyHoursLast48 = zone.hourlyForecasts
@@ -127,9 +150,10 @@ export function calculateEnvironmentalMalus(
   return {
     floodMultiplier,
     windMultiplier,
+    severeWindMultiplier,
     pressureMultiplier,
     combinedMultiplier:
-      floodMultiplier * windMultiplier * pressureMultiplier,
+      floodMultiplier * windMultiplier * severeWindMultiplier * pressureMultiplier,
     rainLast3DaysMm: Math.round(rainLast3DaysMm * 10) / 10,
     windyHoursLast48,
     avgPressureHpa,

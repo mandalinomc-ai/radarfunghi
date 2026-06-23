@@ -14,6 +14,7 @@
     "verify:chat-map": "npx tsx scripts/verify-chat-map.ts",
     "verify:gps": "npx tsx scripts/verify-gps-links.ts",
     "verify:chat-followup": "npx tsx scripts/verify-chat-followup.ts",
+    "setup:telegram": "npx tsx scripts/setup-telegram.ts",
     "postinstall": "node scripts/copy-cesium-assets.mjs"
   },
   "dependencies": {
