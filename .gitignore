@@ -31,6 +31,7 @@ yarn-error.log*
 # env files
 .env*.local
 .telegram-session
+.telegram-auth-state.json
 
 # typescript
 *.tsbuildinfo

@@ -16,6 +16,7 @@
     "verify:chat-followup": "npx tsx scripts/verify-chat-followup.ts",
     "setup:telegram": "npx tsx scripts/setup-telegram.ts",
     "setup:all": "node scripts/setup-all.mjs",
+    "telegram:register": "node scripts/register-telegram-token.mjs",
     "postinstall": "node scripts/copy-cesium-assets.mjs"
   },
   "dependencies": {

@@ -135,9 +135,13 @@ async function main() {
         tgGroup = refreshed.get("TELEGRAM_GROUP_CHAT_ID")?.trim() || tgGroup;
       }
     } else {
-      console.log(
-        "\n⏭️  Telegram: aggiungi TELEGRAM_BOT_TOKEN in .env.local oppure TELEGRAM_API_ID/HASH per provisioning automatico"
-      );
+      console.log("\n— Invio codice login Telegram al telefono —");
+      spawnSync("npx", ["tsx", "scripts/telegram-phone-login.ts", "send", "+393483470654"], {
+        cwd: root,
+        stdio: "inherit",
+        shell: true,
+        timeout: 90_000,
+      });
     }
   }
 

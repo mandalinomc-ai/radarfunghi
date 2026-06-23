@@ -10,6 +10,7 @@ const NAV = [
   { href: "/analytics", label: "Analytics", icon: "📈" },
   { href: "/diario", label: "Diario Pro", icon: "📓" },
   { href: "/classifier", label: "Classificatore", icon: "🔬" },
+  { href: "/telegram", label: "Bot TG", icon: "🤖" },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
