@@ -105,7 +105,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
     const text = scoreReportForZone(latitude, longitude);
-    await sendTelegramMessage(token, chatId, text);
+    const sent = await sendTelegramMessage(token, chatId, text);
+    if (!sent.ok) {
+      console.error("[telegram/webhook] sendMessage GPS:", sent.error);
+    }
     return NextResponse.json({ ok: true });
   }
 
@@ -160,7 +163,7 @@ export async function POST(req: NextRequest) {
   const text = sanitizeUserText((msg.text ?? "").toLowerCase(), 200);
 
   if (text.startsWith("/start") || text.startsWith("/aiuto")) {
-    await sendTelegramMessage(
+    const sent = await sendTelegramMessage(
       token,
       chatId,
       `*MushroomRadar Bot* 🍄\n\n` +
@@ -174,8 +177,9 @@ export async function POST(req: NextRequest) {
         `Invia *foto* per identificazione (non sostituisce micologo)\n\n` +
         `_Uso educativo. Raccolta responsabile._`
     );
+    if (!sent.ok) console.error("[telegram/webhook] /start:", sent.error);
   } else if (text.startsWith("/canale") || text === "canale") {
-    await sendTelegramMessage(
+    const sent = await sendTelegramMessage(
       token,
       chatId,
       `*Canale aggiornamenti MushroomRadar*\n\n` +

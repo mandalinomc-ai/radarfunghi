@@ -12,18 +12,42 @@ export async function telegramApi(
   });
 }
 
+export interface SendMessageResult {
+  ok: boolean;
+  error?: string;
+}
+
 export async function sendTelegramMessage(
   token: string,
   chatId: string,
   text: string,
   parseMode: "Markdown" | "HTML" = "Markdown"
-): Promise<boolean> {
-  const res = await telegramApi(token, "sendMessage", {
+): Promise<SendMessageResult> {
+  const res = await telegramApi("sendMessage", token, {
     chat_id: chatId,
     text,
     parse_mode: parseMode,
   });
-  return res.ok;
+
+  if (res.ok) return { ok: true };
+
+  let error = `HTTP ${res.status}`;
+  try {
+    const json = (await res.json()) as { description?: string };
+    error = json.description ?? error;
+  } catch {
+    /* ignore */
+  }
+
+  if (parseMode === "Markdown") {
+    const plain = await telegramApi("sendMessage", token, {
+      chat_id: chatId,
+      text: text.replace(/[*_`[\]]/g, ""),
+    });
+    if (plain.ok) return { ok: true };
+  }
+
+  return { ok: false, error };
 }
 
 export const BOT_COMMANDS = [
