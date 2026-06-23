@@ -5,6 +5,7 @@ import { RadarSearchProvider } from "@/context/RadarSearchContext";
 import { GlobalChatProvider } from "@/context/GlobalChatContext";
 import AppShell from "@/components/shell/AppShell";
 import GlobalChatDock from "@/components/shell/GlobalChatDock";
+import TelegramCommunityDock from "@/components/TelegramCommunityDock";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import LegalGatekeeperModal from "@/components/LegalGatekeeperModal";
 
@@ -29,6 +30,7 @@ function AppInner({ children }: { children: React.ReactNode }) {
     <>
       <AppShell>{children}</AppShell>
       <GlobalChatDock />
+      <TelegramCommunityDock />
       <LegalGatekeeperModal />
     </>
   );

@@ -6,7 +6,6 @@ import { useRadarSearch } from "@/context/RadarSearchContext";
 import { useMushroomRadarContext } from "@/context/MushroomRadarContext";
 import { useMapCompactDebounce } from "@/hooks/useMapCompactDebounce";
 import LocationDetailPanel from "@/components/LocationDetailPanel";
-import TelegramCommunityBanner from "@/components/TelegramCommunityBanner";
 import { formatHourRange } from "@/lib/timeRange";
 import { formatDateLabel } from "@/lib/dateUtils";
 
@@ -51,14 +50,6 @@ export default function HomeMapPage() {
         tier={tier}
         onMapDragChange={handleMapDrag}
       />
-
-      <div
-        className={`absolute top-3 right-3 z-[1002] max-w-[300px] transition-opacity pointer-events-auto ${
-          mapCompact ? "opacity-0 pointer-events-none" : "opacity-100"
-        }`}
-      >
-        <TelegramCommunityBanner variant="banner" />
-      </div>
 
       <div
         className={`absolute top-3 left-3 z-[1002] pointer-events-none transition-opacity ${
